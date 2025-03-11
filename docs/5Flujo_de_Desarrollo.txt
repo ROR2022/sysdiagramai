@@ -1,0 +1,70 @@
+Documento 5: Flujo de Desarrollo
+El flujo de desarrollo detalla los pasos generales para construir el MVP de SysDiagramAI, basado en el stack tecnológico (Typescript, Next.js, TailwindCSS, DaisyUI, MongoDB, Stripe, Auth.js, API de Open AI). Se enfoca en un enfoque iterativo y eficiente para lanzar un producto funcional.
+
+Paso 1: Configurar el Proyecto
+Objetivo: Establecer la base técnica del proyecto.
+Acciones:
+Inicializar un proyecto Next.js con Typescript: npx create-next-app@latest sysdiagramai --typescript.
+Instalar dependencias principales:
+TailwindCSS y DaisyUI: npm install -D tailwindcss postcss autoprefixer && npm install daisyui.
+MongoDB driver: npm install mongodb.
+Auth.js: npm install next-auth.
+Stripe: npm install stripe.
+Open AI SDK: npm install openai.
+Configurar TailwindCSS (agregar DaisyUI en tailwind.config.js).
+Crear un archivo .env.local para claves (MongoDB URI, Open AI API Key, Stripe Secret, Auth.js Secret).
+Resultado: Proyecto base listo con dependencias instaladas.
+Paso 2: Configurar la Base de Datos (MongoDB)
+Objetivo: Preparar MongoDB para almacenar usuarios y diseños.
+Acciones:
+Conectar a MongoDB Atlas (o local) desde Next.js usando el driver oficial.
+Crear colecciones users y designs (ver estructura en Requerimientos Técnicos).
+Implementar un módulo de conexión en /lib/mongodb.ts para reutilizar en API routes.
+Resultado: Base de datos operativa y conectada al backend.
+Paso 3: Implementar Autenticación (Auth.js)
+Objetivo: Permitir registro e inicio de sesión.
+Acciones:
+Configurar Auth.js en /pages/api/auth/[...nextauth].ts con proveedores (email, Google, GitHub) y MongoDB como adaptador.
+Crear una página de login en /pages/signin.tsx con componentes DaisyUI (formulario, botones).
+Proteger rutas con middleware de Next.js (/middleware.ts) para restringir acceso a usuarios autenticados.
+Resultado: Usuarios pueden registrarse e iniciar sesión; rutas protegidas.
+Paso 4: Diseñar la UI del Formulario (Frontend)
+Objetivo: Crear una interfaz para ingresar requerimientos.
+Acciones:
+Diseñar una página /pages/index.tsx con un formulario (campos para funcionalidad, escala, texto libre) usando TailwindCSS/DaisyUI.
+Agregar validación básica en el cliente (por ejemplo, campo requerido).
+Usar React Hook Form para manejar el estado del formulario.
+Resultado: Formulario funcional y estilizado para capturar requerimientos.
+Paso 5: Integrar la API de Open AI (Backend)
+Objetivo: Conectar el formulario con Open AI para generar diseños.
+Acciones:
+Crear una API route en /pages/api/generate-design.ts.
+Enviar los requerimientos del formulario a Open AI con un prompt estructurado (por ejemplo, "Genera un diagrama de arquitectura y base de datos en Markdown para estos requerimientos").
+Procesar la respuesta de Open AI y devolverla al frontend como JSON (diagrama + explicación).
+Guardar el resultado en la colección designs de MongoDB.
+Resultado: Backend genera y almacena diseños basados en requerimientos.
+Paso 6: Mostrar y Descargar Resultados (Frontend)
+Objetivo: Renderizar y permitir descargar los diseños.
+Acciones:
+Crear una página /pages/results.tsx para mostrar el diagrama (Markdown renderizado con react-markdown) y la explicación.
+Agregar un botón "Descargar" que genera un archivo Markdown o PDF (usando jsPDF para PDF).
+Fetch de la API route desde el frontend con useEffect o SWR.
+Resultado: Usuarios ven y descargan los diseños generados.
+Paso 7: Implementar el Modelo Freemium (Stripe)
+Objetivo: Limitar diseños gratis y habilitar suscripciones.
+Acciones:
+Agregar lógica en /pages/api/generate-design.ts para verificar designsCount en users y bloquear si supera 3 (usuarios gratis).
+Configurar Stripe Checkout en una página /pages/subscribe.tsx para suscripciones.
+Usar Webhooks de Stripe (/pages/api/stripe-webhook.ts) para actualizar plan a "premium" tras el pago.
+Resultado: Modelo freemium funcional con límite gratis y suscripción.
+Paso 8: Pruebas y Despliegue
+Objetivo: Asegurar funcionalidad y lanzar el MVP.
+Acciones:
+Probar manualmente cada historia de usuario (login, generación, descarga).
+Desplegar en Vercel: vercel --prod.
+Verificar conexión con MongoDB Atlas y claves de API en producción.
+Resultado: MVP lanzado y operativo.
+Notas
+Orden Flexible: Algunos pasos (como UI y backend) pueden desarrollarse en paralelo si prefieres iterar rápido.
+Herramientas Adicionales: Usa ESLint/Prettier para consistencia de código y Git para control de versiones.
+Tiempo Estimado: 2-3 semanas para un desarrollador experimentado trabajando solo, asumiendo 20-30 horas semanales.

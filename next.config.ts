@@ -1,7 +1,8 @@
-import type { NextConfig } from "next";
+import { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
-  /* config options here */
+const config: NextConfig = {
+  // Especificar paquetes que deben ser ejecutados en Node.js
+  serverExternalPackages: ['mongodb', 'mongoose']
 };
 
-export default nextConfig;
+export default config;

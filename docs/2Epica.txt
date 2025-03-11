@@ -1,0 +1,68 @@
+Documento 2: Épica
+Épica Principal del Proyecto
+"Automatizar la generación de diseños de sistemas para desarrolladores mediante inteligencia artificial"
+
+Descripción: Permitir que los desarrolladores ingresen requerimientos de software en SysDiagramAI y reciban diagramas de diseño de sistemas (arquitectura y base de datos) generados automáticamente por la API de Open AI, acompañados de explicaciones detalladas y recomendaciones de herramientas. El objetivo es reducir el tiempo y esfuerzo necesarios para planificar sistemas escalables y funcionales.
+Características del MVP (Mínimo Producto Viable)
+El MVP se enfocará en una funcionalidad básica pero usable, con las siguientes características clave:
+
+Autenticación de Usuarios:
+Los usuarios pueden registrarse e iniciar sesión usando email/contraseña o proveedores OAuth (Google, GitHub).
+Propósito: Proteger los datos del usuario y habilitar un historial personalizado.
+Formulario de Requerimientos:
+Un formulario simple donde los usuarios ingresan requerimientos funcionales (por ejemplo, "una app de chat con 100K usuarios") y no funcionales (por ejemplo, "alta disponibilidad").
+Opción de texto libre para mayor flexibilidad.
+Propósito: Capturar datos para enviar a Open AI.
+Generación de Diseños:
+La app envía los requerimientos a la API de Open AI y recibe:
+Un diagrama de arquitectura (descrito en texto, por ejemplo, Markdown o pseudocódigo).
+Un esquema de base de datos (entidades y relaciones).
+Una explicación breve de los componentes.
+Propósito: Proporcionar la funcionalidad central de la app.
+Visualización de Resultados:
+Mostrar los diagramas y explicaciones en una interfaz limpia, con opción de descargarlos como Markdown o PDF.
+Propósito: Hacer los resultados accesibles y útiles para los usuarios.
+Modelo Freemium Básico:
+Límite de 3 diseños gratis por mes; suscripción vía Stripe para diseños ilimitados.
+Propósito: Establecer una base para monetización.
+Tecnologías Específicas
+Basado en el stack definido en el Concepto, aquí están las tecnologías específicas para el MVP:
+
+Typescript:
+Uso: Codificación de toda la lógica (frontend, backend, manejo de respuestas de Open AI).
+Detalle: Tipado estricto para estructuras como los requerimientos y respuestas JSON de Open AI.
+Next.js:
+Uso:
+Frontend: Páginas para login, formulario y resultados (con React).
+Backend: API routes (/api/generate-design) para procesar solicitudes a Open AI.
+Detalle: Usa SSR para el formulario y CSR para los resultados dinámicos.
+TailwindCSS + DaisyUI:
+Uso: Estilizado del formulario (campos, botones) y panel de resultados (tarjetas para diagramas).
+Detalle: DaisyUI para componentes como modales de login y botones predefinidos.
+MongoDB:
+Uso: Almacenar usuarios (credenciales, suscripción) y diseños generados (historial).
+Detalle: Colecciones iniciales: users (id, email, plan) y designs (id, userId, requerimientos, resultado).
+Stripe:
+Uso: Integración de pagos para suscripciones (Webhook para actualizar el estado del usuario en MongoDB).
+Detalle: Plan básico de $10/mes para diseños ilimitados.
+Auth.js:
+Uso: Autenticación con NextAuth, soportando email y OAuth.
+Detalle: Configurado con MongoDB como adaptador para persistencia.
+API de Open AI:
+Uso: Procesamiento de requerimientos y generación de diagramas/explicaciones.
+Detalle: Modelo GPT-4 o similar, con prompts estructurados para respuestas consistentes (por ejemplo, "Devuelve un diagrama de arquitectura en Markdown y una explicación").
+Flujo de Trabajo General
+Inicio: El usuario accede a SysDiagramAI, inicia sesión (Auth.js) y llega al formulario de requerimientos.
+Entrada: Completa el formulario o escribe requerimientos en texto libre y presiona "Generar".
+Procesamiento:
+Next.js API route recibe los datos, los envía a Open AI con un prompt predefinido.
+Open AI devuelve una respuesta estructurada (diagrama + explicación).
+Salida:
+El frontend renderiza el diagrama y explicación en una página de resultados.
+El diseño se guarda en MongoDB asociado al usuario.
+Monetización: Si el usuario supera el límite gratis, se le invita a suscribirse vía Stripe.
+Iteración: El usuario puede editar los requerimientos y regenerar el diseño.
+Justificación del Enfoque
+MVP Simple: Se centra en la funcionalidad clave (generar diseños) sin sobrecargar con características avanzadas (como edición de diagramas), lo que acelera el desarrollo.
+Uso del Stack: Aprovecha Next.js para unificar frontend/backend, MongoDB para flexibilidad, y Stripe/Auth.js para pagos/seguridad, alineándose con tu experiencia.
+Open AI como Núcleo: La API es el diferenciador, automatizando un proceso típicamente manual para desarrolladores.

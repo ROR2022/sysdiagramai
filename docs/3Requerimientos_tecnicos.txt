@@ -1,0 +1,71 @@
+Documento 3: Requerimientos Técnicos
+Tecnologías y Herramientas
+A continuación, detallo el stack tecnológico, su uso en SysDiagramAI, justificaciones y comparaciones con alternativas menos ideales.
+
+Typescript
+Uso: Lenguaje principal para todo el código (frontend, backend, lógica de APIs).
+Justificación: Garantiza tipado seguro para manejar estructuras complejas como las respuestas JSON de Open AI y los datos del usuario. Mejora la mantenibilidad en un proyecto que podría escalar.
+Comparación: Alternativas como JavaScript puro carecen de tipado estático, aumentando el riesgo de errores en runtime, especialmente con datos dinámicos de Open AI.
+Next.js
+Uso: Framework para frontend (páginas React) y backend (API routes para conectar con Open AI y MongoDB).
+Justificación: Unifica el desarrollo full-stack en un solo proyecto, soporta SSR para rendimiento y tiene integración nativa con Vercel (despliegue fácil). Ideal para un MVP rápido.
+Comparación: Django (Python) ofrece más robustez para backends complejos, pero requiere un frontend separado (por ejemplo, React), aumentando la complejidad inicial frente a Next.js.
+TailwindCSS + DaisyUI
+Uso: Estilizado del formulario de requerimientos y panel de resultados.
+Justificación: TailwindCSS permite diseño rápido con clases utilitarias; DaisyUI agrega componentes predefinidos (botones, formularios), acelerando la UI. Ambos son ligeros y personalizables.
+Comparación: Bootstrap es más pesado y menos flexible; CSS puro requiere más tiempo de desarrollo, lo que no es ideal para un MVP.
+MongoDB
+Uso: Base de datos para almacenar usuarios y diseños generados.
+Justificación: Su naturaleza NoSQL es ideal para datos dinámicos (requerimientos y respuestas de Open AI como JSON). Escala horizontalmente y se integra bien con Node.js/Next.js.
+Comparación: PostgreSQL (SQL) es mejor para relaciones complejas, pero su rigidez no se alinea con la flexibilidad inicial que requiere SysDiagramAI.
+Stripe
+Uso: Gestión de suscripciones para el modelo freemium.
+Justificación: Fácil de integrar con Next.js vía API y Webhooks, soporta pagos recurrentes y tiene documentación clara. Perfecto para un MVP con monetización.
+Comparación: PayPal es más complejo de integrar y menos enfocado en suscripciones; soluciones personalizadas serían innecesariamente laboriosas.
+Auth.js
+Uso: Autenticación de usuarios (email, OAuth).
+Justificación: Diseñado para Next.js, ofrece configuración rápida y seguridad robusta (JWT, sesiones). Soporta MongoDB como adaptador.
+Comparación: Firebase Auth es una alternativa, pero agrega dependencia a Google Cloud, mientras que Auth.js es más ligero y se alinea con el stack.
+API de Open AI
+Uso: Procesamiento de requerimientos y generación de diagramas/explicaciones.
+Justificación: Su capacidad de lenguaje natural permite interpretar requerimientos complejos y devolver respuestas estructuradas. Es el núcleo diferenciador de la app.
+Comparación: Modelos locales (por ejemplo, LLaMA) requieren hardware potente y no son prácticos para un MVP; otras APIs (como Google Gemini) son menos maduras en este caso.
+Requerimientos Funcionales
+Lo que la app debe hacer en el MVP:
+
+RF1: Permitir a los usuarios registrarse e iniciar sesión con email/contraseña o OAuth (Google, GitHub).
+RF2: Proporcionar un formulario para ingresar requerimientos funcionales y no funcionales, con opción de texto libre.
+RF3: Enviar los requerimientos a Open AI y generar un diagrama de arquitectura (texto) y un esquema de base de datos.
+RF4: Mostrar los resultados (diagrama, explicación) en una interfaz descargable (Markdown/PDF).
+RF5: Limitar a 3 diseños gratis por mes, con suscripción para acceso ilimitado.
+Requerimientos No Funcionales
+Cualidades que la app debe cumplir:
+
+RNF1 - Rendimiento: Generar diseños en menos de 10 segundos (dependiendo de la latencia de Open AI).
+RNF2 - Escalabilidad: Soportar hasta 1,000 usuarios concurrentes (escalable con Vercel y MongoDB Atlas).
+RNF3 - Seguridad: Proteger datos de usuarios con autenticación (Auth.js) y cifrado en tránsito (HTTPS).
+RNF4 - Usabilidad: Interfaz intuitiva, con formularios claros y resultados legibles.
+RNF5 - Disponibilidad: 99% de uptime (garantizado por Vercel/MongoDB Atlas).
+Estructura de la Base de Datos (MongoDB)
+Colecciones iniciales para el MVP:
+
+users
+Campos:
+_id: ObjectId (identificador único).
+email: String (único, requerido).
+password: String (hash, opcional para OAuth).
+plan: String ("free" | "premium", default: "free").
+designsCount: Number (contador mensual, default: 0).
+Propósito: Almacenar datos de autenticación y estado de suscripción.
+designs
+Campos:
+_id: ObjectId (identificador único).
+userId: ObjectId (referencia a users).
+requirements: Object (JSON con requerimientos ingresados).
+result: Object (JSON con diagrama y explicación de Open AI).
+createdAt: Date (fecha de creación).
+Propósito: Guardar historial de diseños por usuario.
+Índices:
+users.email (único) para búsquedas rápidas.
+designs.userId para filtrar diseños por usuario.
+Justificación: MongoDB permite almacenar requerimientos y resultados como objetos JSON sin esquemas rígidos, lo que es ideal para datos generados dinámicamente por Open AI.

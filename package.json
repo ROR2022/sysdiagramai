@@ -2,6 +2,7 @@
   "name": "sysdiagramai",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -9,19 +10,42 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@auth/mongodb-adapter": "^3.7.4",
+    "@stripe/stripe-js": "^5.7.0",
+    "@types/bcrypt": "^5.0.2",
+    "bcrypt": "^5.1.1",
+    "browserify-zlib": "^0.2.0",
+    "crypto-browserify": "^3.12.1",
+    "mongodb": "^6.13.1",
+    "mongoose": "^8.10.1",
+    "mysterybox": "file:",
+    "next": "15.1.7",
+    "next-auth": "^5.0.0-beta.25",
+    "path-browserify": "^1.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.2.1"
+    "react-hot-toast": "^2.5.2",
+    "resend": "^4.1.2",
+    "stream-browserify": "^3.0.0",
+    "stripe": "^17.7.0",
+    "sysdiagramai": "file:",
+    "theme-change": "^2.5.0",
+    "util": "^0.12.5",
+    "webpack": "^5.98.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "autoprefixer": "^10.4.20",
+    "daisyui": "^4.12.24",
+    "dotenv": "^16.4.7",
     "eslint": "^9",
-    "eslint-config-next": "15.2.1",
-    "@eslint/eslintrc": "^3"
+    "eslint-config-next": "15.1.7",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
   }
 }

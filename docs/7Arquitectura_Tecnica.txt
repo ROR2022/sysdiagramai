@@ -1,0 +1,78 @@
+Documento 7: Arquitectura Técnica
+Diagrama de Alto Nivel (Descripción en Texto)
+A continuación, se describe la arquitectura técnica de SysDiagramAI como un sistema de componentes interconectados. 
+Imagina un diagrama con las siguientes capas y conexiones:
+[Usuario] <--> [Frontend: Next.js Pages] <--> [Backend: Next.js API Routes]
+    |                   |                            |
+    |                   |                            |
+[Auth.js]         [MongoDB]                [API de Open AI]
+    |                   |                            |
+[Stripe]         [Colecciones: users, designs]    |
+    |                                            |
+[Webhook Stripe] <----------------------------- [Respuesta Open AI]
+
+Flujo Principal:
+El usuario interactúa con el frontend (páginas Next.js).
+El frontend envía solicitudes al backend (API routes).
+El backend se conecta a MongoDB (datos), Open AI (generación) y Stripe (pagos).
+Las respuestas fluyen de vuelta al frontend para visualización.
+Componentes y Explicación
+Frontend (Next.js Pages)
+Descripción: Interfaz de usuario construida con React en Next.js, estilizada con TailwindCSS y DaisyUI. Incluye:
+/signin.tsx: Página de login.
+/index.tsx: Formulario de requerimientos.
+/results.tsx: Visualización de diagramas y explicaciones.
+/subscribe.tsx: Página de suscripción.
+Interacciones:
+Envía datos del formulario a las API routes.
+Renderiza respuestas (Markdown con react-markdown, PDF con jsPDF).
+Justificación: Next.js ofrece SSR/CSR y un desarrollo unificado con el backend.
+Backend (Next.js API Routes)
+Descripción: Lógica del servidor en /pages/api/:
+/api/auth/[...nextauth].ts: Autenticación con Auth.js.
+/api/generate-design.ts: Procesa requerimientos y consulta Open AI.
+/api/stripe-webhook.ts: Maneja eventos de Stripe.
+Interacciones:
+Recibe solicitudes del frontend.
+Consulta MongoDB (usuarios, diseños) y Open AI (generación).
+Devuelve JSON al frontend.
+Justificación: API routes son nativas de Next.js, simplificando el desarrollo full-stack.
+Auth.js
+Descripción: Módulo de autenticación integrado con Next.js.
+Interacciones:
+Gestiona sesiones y JWT.
+Almacena datos de usuarios en la colección users de MongoDB.
+Protege rutas privadas (middleware).
+Justificación: Compatible con Next.js, seguro y fácil de configurar.
+MongoDB
+Descripción: Base de datos NoSQL con colecciones:
+users: Credenciales, plan, contador de diseños.
+designs: Historial de requerimientos y resultados.
+Interacciones:
+Conectada al backend vía driver oficial.
+Almacena datos persistentes (usuarios, diseños).
+Justificación: Flexibilidad para datos dinámicos (JSON de Open AI).
+API de Open AI
+Descripción: Servicio externo que procesa requerimientos y genera diagramas/explicaciones.
+Interacciones:
+Recibe prompts estructurados desde el backend.
+Devuelve respuestas en texto (Markdown + explicación).
+Justificación: Núcleo de la app, automatiza el diseño con IA.
+Stripe
+Descripción: Plataforma de pagos para suscripciones.
+Interacciones:
+Frontend inicia Checkout para suscripciones.
+Webhook actualiza el estado del usuario en MongoDB (plan: "premium").
+Justificación: Simplifica la monetización con integración directa.
+Interacciones Clave
+Autenticación:
+El usuario inicia sesión → Auth.js valida → MongoDB guarda datos → Sesión activa en el frontend.
+Generación de Diseños:
+Formulario enviado → API route verifica límite (designsCount) → Consulta Open AI → Guarda en designs → Frontend muestra resultado.
+Suscripción:
+Usuario paga en /subscribe → Stripe procesa → Webhook actualiza plan → Acceso ilimitado.
+Escalabilidad y Consideraciones
+Frontend/Backend: Next.js en Vercel escala automáticamente con tráfico.
+MongoDB: Atlas soporta réplicas y sharding para crecimiento.
+Open AI: Limitado por cuotas de la API; optimizar prompts para eficiencia.
+Stripe: Escalable por diseño, sin ajustes iniciales necesarios.

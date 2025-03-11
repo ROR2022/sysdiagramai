@@ -1,0 +1,59 @@
+Documento 6: Fases de Desarrollo
+El desarrollo del MVP de SysDiagramAI se organizará en cuatro fases iterativas, desde la investigación inicial hasta el lanzamiento. Cada fase tiene objetivos específicos y entregables medibles, alineados con el flujo de desarrollo previo.
+
+Fase 1: Investigación y Configuración Inicial
+Duración Estimada: 2-3 días (4-6 horas diarias).
+Objetivo: Establecer las bases técnicas y validar integraciones clave.
+Acciones:
+Crear el proyecto Next.js con Typescript y configurar dependencias (TailwindCSS, DaisyUI, MongoDB, Auth.js, Stripe, Open AI SDK).
+Investigar y probar la API de Open AI con un prompt básico (por ejemplo, "Genera un diagrama simple para una app de chat").
+Configurar MongoDB Atlas y probar la conexión desde Next.js.
+Crear un repositorio Git para control de versiones.
+Entregables:
+Proyecto Next.js inicializado y subido a Git.
+Conexión exitosa a MongoDB Atlas.
+Respuesta básica de Open AI probada localmente.
+Criterio de Éxito: El entorno de desarrollo está listo y las integraciones principales funcionan.
+Fase 2: Prototipo Básico (Autenticación y Formulario)
+Duración Estimada: 5-7 días (4-6 horas diarias).
+Objetivo: Implementar autenticación y un formulario funcional para capturar requerimientos.
+Acciones:
+Configurar Auth.js con email y OAuth (Google/GitHub), integrando MongoDB como adaptador.
+Diseñar una página de login con TailwindCSS/DaisyUI.
+Crear el formulario de requerimientos en /pages/index.tsx (campos básicos + texto libre).
+Probar la autenticación y el guardado de usuarios en la colección users.
+Entregables:
+Sistema de autenticación funcional (registro, login, logout).
+Formulario de requerimientos estilizado y con validación básica.
+Criterio de Éxito: Un usuario puede registrarse, iniciar sesión y completar el formulario sin errores.
+Fase 3: Generación y Visualización de Diseños
+Duración Estimada: 7-10 días (4-6 horas diarias).
+Objetivo: Conectar el formulario con Open AI y mostrar resultados descargables.
+Acciones:
+Implementar la API route /pages/api/generate-design.ts para enviar requerimientos a Open AI y guardar respuestas en designs.
+Optimizar el prompt de Open AI para respuestas estructuradas (diagrama en Markdown + explicación).
+Diseñar la página /pages/results.tsx para renderizar diagramas (con react-markdown) y explicaciones.
+Agregar funcionalidad de descarga (Markdown y PDF con jsPDF).
+Probar el flujo completo: formulario → generación → visualización.
+Entregables:
+Backend generando diseños desde Open AI.
+Frontend mostrando y permitiendo descargar resultados.
+Criterio de Éxito: Ingresar requerimientos genera un diagrama y explicación descargables en menos de 10 segundos.
+Fase 4: Monetización y Lanzamiento del MVP
+Duración Estimada: 5-7 días (4-6 horas diarias).
+Objetivo: Integrar el modelo freemium y lanzar la app en producción.
+Acciones:
+Implementar la lógica de límite (3 diseños gratis) en la API route, actualizando designsCount en users.
+Configurar Stripe Checkout en /pages/subscribe.tsx y Webhook en /pages/api/stripe-webhook.ts.
+Realizar pruebas end-to-end (login, generación, suscripción).
+Desplegar en Vercel (vercel --prod) y verificar conexiones (MongoDB, Open AI, Stripe).
+Documentar pasos básicos para usuarios (README.md).
+Entregables:
+Modelo freemium operativo (límite gratis + suscripción).
+MVP desplegado y accesible públicamente.
+README con instrucciones de uso.
+Criterio de Éxito: La app está en producción, soporta el flujo completo y permite suscripciones.
+Notas
+Total Estimado: 19-27 días (~3-4 semanas) con 4-6 horas diarias, asumiendo un desarrollador experimentado trabajando solo.
+Flexibilidad: Las fases pueden solaparse (por ejemplo, empezar la UI mientras se prueba Open AI).
+Post-Lanzamiento: Iterar basado en retroalimentación (por ejemplo, mejorar diagramas o UI), pero fuera del MVP.

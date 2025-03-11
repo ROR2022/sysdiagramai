@@ -1,0 +1,26 @@
+Documento 4: Historias de Usuario
+Las siguientes historias representan las necesidades principales de los usuarios de SysDiagramAI (desarrolladores) en el contexto del MVP. Se centran en la funcionalidad clave de autenticación, ingreso de requerimientos, generación de diseños y acceso a resultados.
+
+HU1: Registrarme e iniciar sesión
+Como desarrollador, quiero registrarme e iniciar sesión con mi email o cuenta de Google/GitHub para acceder a una experiencia personalizada y segura que proteja mis diseños.
+Notas: Usa Auth.js para autenticación; el beneficio es la seguridad y la posibilidad de guardar un historial.
+HU2: Ingresar requerimientos de software
+Como desarrollador, quiero completar un formulario simple o escribir requerimientos en texto libre para especificar las necesidades de mi sistema (por ejemplo, escala, tipo de app) y obtener un diseño personalizado.
+Notas: El formulario debe ser intuitivo (TailwindCSS/DaisyUI) y flexible para adaptarse a distintos niveles de detalle.
+HU3: Generar diagramas de diseño automáticamente
+Como desarrollador, quiero que la app procese mis requerimientos y genere un diagrama de arquitectura y base de datos para ahorrar tiempo en la planificación de mi sistema.
+Notas: Depende de la API de Open AI; el resultado debe ser claro y útil (por ejemplo, en Markdown).
+HU4: Ver y descargar resultados
+Como desarrollador, quiero ver los diagramas y explicaciones en una interfaz limpia y descargarlos como Markdown o PDF para usarlos en mis proyectos o compartirlos con mi equipo.
+Notas: Next.js renderiza los resultados; la descarga es esencial para la usabilidad.
+HU5: Acceder a un modelo freemium
+Como desarrollador, quiero generar hasta 3 diseños gratis por mes y suscribirme para más para probar la app sin costo inicial y pagar solo si me es útil.
+Notas: Stripe gestiona suscripciones; el límite fomenta la conversión a usuarios premium.
+
+Detalles Adicionales
+Prioridad: Todas las historias son esenciales para el MVP, pero HU1 (autenticación) y HU3 (generación de diseños) son el núcleo de la funcionalidad.
+Criterios de Aceptación (Ejemplo para HU3):
+El usuario ingresa requerimientos válidos.
+La app devuelve un diagrama de arquitectura y base de datos en menos de 10 segundos.
+El resultado incluye una explicación legible y relevante.
+Enfoque: Estas historias reflejan las necesidades de un desarrollador que busca automatización y simplicidad, alineándose con el propósito de SysDiagramAI.

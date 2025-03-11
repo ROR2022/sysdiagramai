@@ -1,0 +1,51 @@
+Framework de Diseño de Sistemas de Software
+
+
+1. Entender el Problema y Requisitos
+Clarificar el Problema:
+ Reformula el problema con tus propias palabras para asegurarte de comprenderlo.
+Usuarios y Casos de Uso:
+ Identifica quiénes utilizarán el sistema y qué funcionalidades principales debe soportar.
+Requisitos Funcionales y No Funcionales:
+ Explica qué debe hacer el sistema (funcionalidades) y aspectos como latencia, escalabilidad, seguridad y disponibilidad.
+Suposiciones y Restricciones:
+ Plantea cualquier asunción que necesites aclarar y limita el alcance según posibles restricciones tecnológicas o de integración.
+
+2. Arquitectura de Alto Nivel
+Componentes Clave:
+ Define los principales bloques del sistema, por ejemplo:
+Frontend: Interfaz de usuario (web/móvil).
+API Gateway: Punto único de entrada para manejar autenticación, enrutamiento y limitación de tráfico.
+Servicios de Backend/Microservicios: Cada uno encargado de funcionalidades específicas (por ejemplo, recolección de datos, procesamiento, notificaciones).
+Bases de Datos: Selección entre SQL (para consistencia) y NoSQL (para alta escalabilidad), además de un caché (como Redis) para acelerar lecturas.
+Sistemas de Mensajería/Colas: Para tareas asíncronas como notificaciones o logging.
+Patrones de Comunicación:
+ Establece si los servicios se comunican de forma sincrónica (REST/gRPC) o asíncrona (colas de mensajes).
+
+3. Diseño Detallado y Tecnologías
+Modelado de Datos y Almacenamiento:
+ Describe las entidades clave y elige entre bases de datos relacionales o NoSQL, según necesidades de consistencia y volumen.
+Diseño de APIs:
+ Define endpoints, formatos de solicitud/respuesta y manejo de errores.
+Stack Tecnológico:
+ Menciona lenguajes y frameworks preferidos (por ejemplo, Java con Spring Boot, Python para ML), y herramientas de bases de datos (PostgreSQL, MongoDB, Redis), así como servicios en la nube si aplica.
+Seguridad:
+ Garantiza la encriptación en tránsito (HTTPS/TLS), mecanismos de autenticación/autorización (OAuth, JWT) y el cumplimiento de normas (GDPR, PCI-DSS).
+Escalabilidad y Rendimiento:
+ Considera balanceo de carga, escalado horizontal, estrategias de caché y patrones de resiliencia (Circuit Breaker, reintentos).
+
+4. Trade-offs y Alternativas
+Justificar Decisiones:
+ Explica brevemente por qué eliges una solución (por ejemplo, microservicios para escalabilidad frente a un monolito más simple).
+Presentar Alternativas:
+ Menciona otras opciones (por ejemplo, SQL vs. NoSQL, REST vs. gRPC) y los pros y contras de cada una.
+Resiliencia:
+ Detalla cómo manejarías fallos, timeouts y errores, usando estrategias como reintentos y Circuit Breakers.
+
+5. Validar el Diseño
+Estrategia de Pruebas:
+ Incluye pruebas unitarias para componentes individuales, pruebas de integración para la interacción entre servicios y pruebas de rendimiento para simular carga alta.
+Monitoreo y Logging:
+ Implementa sistemas centralizados de logs, trazabilidad distribuida y health checks para supervisar la salud y el rendimiento del sistema.
+Recuperación ante Fallos:
+ Explica cómo se gestionará la recuperación en caso de fallos (autoescalado, replicación, backups).
