@@ -23,18 +23,23 @@ export default function DashboardLayout({
         <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
         
         {/* Contenido principal */}
-        <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
+        <div className="flex-1 flex flex-col min-h-screen">
           {/* Topbar */}
           <Topbar toggleSidebar={toggleSidebar} />
           
-          {/* Contenido */}
-          <main className="flex-1 p-4 overflow-auto">
-            {children}
-          </main>
+          {/* Contenedor del contenido principal con restricción de ancho máximo */}
+          <div className="flex-1 w-full mx-auto max-w-screen-2xl px-4 md:px-6 lg:px-8">
+            {/* Contenido */}
+            <main className="py-6">
+              {children}
+            </main>
+          </div>
           
           {/* Footer */}
           <footer className="p-4 border-t border-base-300 text-center text-sm text-base-content/70">
-            <p>© 2024 SysDiagramAI. Todos los derechos reservados.</p>
+            <div className="max-w-screen-2xl mx-auto">
+              <p> 2024 SysDiagramAI. Todos los derechos reservados.</p>
+            </div>
           </footer>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import dbConnect from "./dbConnect";
 
 //eslint-disable-next-line 
 //import { User } from "@/libs/models/user";
@@ -11,21 +11,14 @@ import mongoose from "mongoose";
 
 
 const connectDB = async () => {
-  if (mongoose.connection.readyState === 1) {
-    console.log("Already connected to MongoDB");
-    return;
-  }
   try {
-    //const conn = 
-    await mongoose.connect(process.env.MONGO_URI as string);
-    //console.log(`MongoDB Connected: ${conn.connection.host}`);
+    await dbConnect();
   } catch (error) {
     if (error instanceof Error) {
-      console.error(`Error: ${error?.message || "Unknown error"}`);
+      console.error(`Error al conectar a MongoDB: ${error?.message || "Error desconocido"}`);
     } else {
-      console.error("An unknown error occurred");
+      console.error("Ocurrió un error desconocido al conectar a MongoDB");
     }
-    //process.exit(1);
   }
 };
 

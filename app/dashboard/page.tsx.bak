@@ -1,0 +1,328 @@
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+
+export default async function DashboardPage() {
+  const session = await auth();
+
+  if (!session) {
+    redirect("/auth/signin");
+  }
+
+  // Extraer datos del usuario
+  const user = session.user;
+
+  //console.log('datos del usuario:', user);
+
+  // En un proyecto real, aquí se cargarían datos como diagramas recientes, estadísticas, etc.
+  const mockRecentDiagrams = [
+    { id: '1', title: 'Arquitectura Microservicios', date: '2024-03-05', status: 'completed' },
+    { id: '2', title: 'Diseño de API', date: '2024-03-07', status: 'draft' },
+    { id: '3', title: 'Modelo de Base de Datos', date: '2024-03-09', status: 'completed' },
+  ];
+
+  return (
+    <>
+      {/* Encabezado del Dashboard */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-base-content">Dashboard</h1>
+          <p className="text-base-content/70">Bienvenido de nuevo, {user?.name || 'Usuario'}</p>
+        </div>
+        <div className="flex gap-3">
+          <Link href="/dashboard/create" className="btn btn-primary">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Nuevo Diagrama
+          </Link>
+          <Link href="/dashboard/templates" className="btn btn-outline">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+              />
+            </svg>
+            Plantillas
+          </Link>
+        </div>
+      </div>
+
+      {/* Sistema de Grid para el contenido principal */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Sección de Resumen */}
+        <div className="md:col-span-2 lg:col-span-2">
+          <div className="card bg-base-100 shadow-md h-full">
+            <div className="card-body">
+              <h2 className="card-title text-xl mb-4">Resumen</h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                <div className="stat bg-base-200 rounded-box p-4">
+                  <div className="stat-title text-base-content/70">Diagramas</div>
+                  <div className="stat-value text-primary">12</div>
+                  <div className="stat-desc text-base-content/60">↗︎ 2 (30%)</div>
+                </div>
+                
+                <div className="stat bg-base-200 rounded-box p-4">
+                  <div className="stat-title text-base-content/70">Proyectos</div>
+                  <div className="stat-value text-secondary">4</div>
+                  <div className="stat-desc text-base-content/60">↗︎ 1 (25%)</div>
+                </div>
+                
+                <div className="stat bg-base-200 rounded-box p-4">
+                  <div className="stat-title text-base-content/70">Colaboradores</div>
+                  <div className="stat-value text-accent">7</div>
+                  <div className="stat-desc text-base-content/60">↗︎ 3 (42%)</div>
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Diagrama</th>
+                      <th>Fecha</th>
+                      <th>Estado</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockRecentDiagrams.map((diagram) => (
+                      <tr key={diagram.id}>
+                        <td>{diagram.title}</td>
+                        <td>{diagram.date}</td>
+                        <td>
+                          <span className={`badge ${diagram.status === 'completed' ? 'badge-success' : 'badge-warning'} badge-sm`}>
+                            {diagram.status === 'completed' ? 'Completado' : 'Borrador'}
+                          </span>
+                        </td>
+                        <td className="text-right">
+                          <Link href={`/dashboard/diagrams/${diagram.id}`} className="btn btn-ghost btn-xs">
+                            Ver
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="card-actions justify-end mt-4">
+                <Link href="/dashboard/diagrams" className="btn btn-sm btn-ghost">
+                  Ver todos →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Perfil del Usuario */}
+        <div className="lg:col-span-1">
+          <div className="card bg-base-100 shadow-md h-full">
+            <div className="card-body">
+              <h3 className="text-xl font-semibold mb-4">Mi Perfil</h3>
+              <div className="flex flex-col items-center">
+                <div className="avatar mb-4">
+                  {user?.image ? (
+                    <div className="w-24 h-24 rounded-full overflow-hidden relative">
+                      <Image
+                        src={user.image}
+                        alt={`Avatar de ${user?.name || 'Usuario'}`}
+                        fill
+                        sizes="96px"
+                        className="object-cover"
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-primary text-primary-content flex items-center justify-center text-3xl">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                  )}
+                </div>
+                <h4 className="text-lg font-medium">{user?.name || 'Usuario'}</h4>
+                <p className="text-sm text-base-content/70 mb-4">{user?.email || ''}</p>
+                
+                <div className="flex gap-2 mt-2">
+                  <Link href="/dashboard/profile" className="btn btn-sm btn-primary">
+                    Editar Perfil
+                  </Link>
+                  <Link href="/dashboard/settings" className="btn btn-sm btn-outline">
+                    Configuración
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Actividad Reciente */}
+        <div className="md:col-span-1 lg:col-span-1">
+          <div className="card bg-base-100 shadow-md h-full">
+            <div className="card-body">
+              <h2 className="card-title text-xl mb-4">Actividad Reciente</h2>
+              <ul className="space-y-3">
+                <li className="flex items-start">
+                  <div className="bg-info bg-opacity-20 text-info p-2 rounded-full mr-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Nuevo diagrama creado</p>
+                    <p className="text-xs text-base-content/70">Modelo de Base de Datos</p>
+                    <p className="text-xs text-base-content/50">Hace 2 horas</p>
+                  </div>
+                </li>
+                
+                <li className="flex items-start">
+                  <div className="bg-success bg-opacity-20 text-success p-2 rounded-full mr-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Diagrama completado</p>
+                    <p className="text-xs text-base-content/70">Arquitectura Microservicios</p>
+                    <p className="text-xs text-base-content/50">Ayer</p>
+                  </div>
+                </li>
+                
+                <li className="flex items-start">
+                  <div className="bg-warning bg-opacity-20 text-warning p-2 rounded-full mr-3">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Diagrama editado</p>
+                    <p className="text-xs text-base-content/70">Diseño de API</p>
+                    <p className="text-xs text-base-content/50">Hace 2 días</p>
+                  </div>
+                </li>
+              </ul>
+              
+              <div className="card-actions justify-end mt-4">
+                <Link href="/dashboard/activity" className="btn btn-sm btn-ghost">
+                  Ver todo →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Recursos y Tutoriales */}
+        <div className="md:col-span-1 lg:col-span-2">
+          <div className="card bg-base-100 shadow-md h-full">
+            <div className="card-body">
+              <h2 className="card-title text-xl mb-4">Recursos y Tutoriales</h2>
+              
+              <ul className="space-y-3 mb-4">
+                <li className="p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors">
+                  <Link href="/resources/getting-started" className="flex items-start">
+                    <div className="bg-primary bg-opacity-20 text-primary p-2 rounded-full mr-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium">Comenzando con SysDiagramAI</p>
+                      <p className="text-xs text-base-content/70 mt-1">Aprende los conceptos básicos para crear diagramas</p>
+                    </div>
+                  </Link>
+                </li>
+                
+                <li className="p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors">
+                  <Link href="/resources/system-design" className="flex items-start">
+                    <div className="bg-secondary bg-opacity-20 text-secondary p-2 rounded-full mr-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium">Patrones de Diseño de Sistemas</p>
+                      <p className="text-xs text-base-content/70 mt-1">Mejora tus diseños con patrones comunes</p>
+                    </div>
+                  </Link>
+                </li>
+                
+                <li className="p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors">
+                  <Link href="/resources/collaboration" className="flex items-start">
+                    <div className="bg-accent bg-opacity-20 text-accent p-2 rounded-full mr-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium">Colaboración en Equipo</p>
+                      <p className="text-xs text-base-content/70 mt-1">Aprende a trabajar en diagramas con tu equipo</p>
+                    </div>
+                  </Link>
+                </li>
+              </ul>
+              
+              <div className="card-actions justify-end">
+                <Link href="/resources" className="btn btn-sm btn-ghost">
+                  Explorar recursos →
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
