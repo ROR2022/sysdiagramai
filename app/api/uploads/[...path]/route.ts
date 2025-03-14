@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import fs from 'fs';
 import { auth } from '@/auth';
@@ -6,17 +6,13 @@ import { auth } from '@/auth';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-interface RouteParams {
-  params: {
-    path: string[];
-  };
-}
+
 
 /**
  * GET /api/uploads/[...path]
  * Sirve archivos estáticos desde la carpeta uploads
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest) {
   try {
     // Verificar autenticación (opcional, depende de tus requisitos de seguridad)
     const session = await auth();
@@ -27,9 +23,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Extraer el path antes de usarlo
-    const myParams = await params;
-    const pathSegments = [...myParams.path];
+    // Extraer el path antes de usarlo de la url  
+    const pathSegments = request.nextUrl.pathname.split('/').slice(2);
 
     // Construir la ruta del archivo
     const filePath = path.join(process.cwd(), 'uploads', ...pathSegments);

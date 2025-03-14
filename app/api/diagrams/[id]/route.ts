@@ -21,7 +21,7 @@ export async function GET(
     }
 
     // Validar `id`
-    if (id) {
+    if (!id) {
       return NextResponse.json({ error: "ID de diagrama no proporcionado" }, { status: 400 });
     }
 
