@@ -75,8 +75,7 @@ export async function GET(
  * Actualiza un requisito existente
  */
 export async function PUT(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
 ) {
   try {
     // Verificar autenticación
@@ -89,8 +88,10 @@ export async function PUT(
       );
     }
     
+    const listUrl = request.nextUrl.pathname.split('/');
+    const id = listUrl[listUrl.length - 2];
     // Obtener el ID del requisito de los parámetros de ruta
-    const requirementId = context.params.id;
+    const requirementId = id;
     
     if (!requirementId) {
       return NextResponse.json(
@@ -162,8 +163,7 @@ export async function PUT(
  * Elimina un requisito existente
  */
 export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
 ) {
   try {
     // Verificar autenticación
@@ -176,8 +176,10 @@ export async function DELETE(
       );
     }
     
+    const listUrl = request.nextUrl.pathname.split('/');
+    const id = listUrl[listUrl.length - 2];
     // Obtener el ID del requisito de los parámetros de ruta
-    const requirementId = context.params.id;
+    const requirementId = id;
     
     if (!requirementId) {
       return NextResponse.json(
