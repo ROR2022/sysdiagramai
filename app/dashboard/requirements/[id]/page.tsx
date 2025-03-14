@@ -1,6 +1,4 @@
-//import { Metadata } from 'next';
-//import { type NextPage } from 'next';
-import { type NextRequest } from 'next/server';
+
 import { notFound } from 'next/navigation';
 import { getRequirementById } from '@/libs/data/requirements';
 import { auth } from '@/auth';
@@ -49,7 +47,17 @@ export async function generateMetadata(
   }
 } */
 
-export default async function RequirementPage(request: NextRequest) {
+
+  interface PageProps {
+    params: {
+      id: string;
+    };
+    searchParams?: {
+      [key: string]: string | string[] | undefined;
+    };
+  }
+
+export default async function RequirementPage({ params }: PageProps) {
 
   const session = await auth();
   
@@ -67,10 +75,9 @@ export default async function RequirementPage(request: NextRequest) {
   let requirement: ISystemRequirement | null = null;
   try {
     // Extraer el ID de la url 
-    const listUrl = request.nextUrl.pathname.split('/');
-    const id = listUrl[listUrl.length - 2];
+    const id = await params.id;
     if (!id) {
-      console.error('No se encontró el ID en la URL', id, listUrl);
+      console.error('No se encontró el ID en la URL', id);
       notFound();
     }
     requirement = await getRequirementById(id, session.user.id as string);
