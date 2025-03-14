@@ -1,68 +1,65 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { SystemRequirement } from "@/libs/models/systemRequirement";
-import { SystemRequirementService } from "@/libs/services/systemRequirementService";
+import clientPromise from '@/libs/mongo';
+import { ObjectId } from 'mongodb';
 
 // Especificar explícitamente el runtime para evitar problemas con TurboPack
 export const runtime = "nodejs";
-
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
 
 /**
  * GET /api/requirements/[id]
  * Obtiene un requisito específico por ID
  */
 export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
     // Verificar autenticación
     const session = await auth();
     
-    if (!session) {
+    if (!session || !session.user) {
       return NextResponse.json(
-        { error: 'No autenticado' },
+        { error: "No autorizado" },
         { status: 401 }
       );
     }
     
-    // Extraer el ID antes de usarlo
-    const id = String(params.id);
+    // Obtener el ID del requisito de los parámetros de ruta
+    const requirementId = context.params.id;
     
-    // Obtener el requisito de la base de datos
-    const requirement = await SystemRequirement.findOne({
-      _id: id,
-      userId: session.user?.id
+    if (!requirementId) {
+      return NextResponse.json(
+        { error: "ID de requisito no proporcionado" },
+        { status: 400 }
+      );
+    }
+    
+    // Conectar a la base de datos
+    const client = await clientPromise;
+    const db = client.db();
+    
+    // Buscar el requisito por ID
+    const requirement = await db.collection("requirements").findOne({
+      _id: new ObjectId(requirementId),
+      userId: session.user.id
     });
     
     if (!requirement) {
       return NextResponse.json(
-        { error: 'Requisito no encontrado o no autorizado' },
+        { error: "Requisito no encontrado" },
         { status: 404 }
       );
     }
     
-    // Transformar los datos para el formulario
-    const formData = SystemRequirementService.toFormData(requirement);
+    // Retornar el requisito
+    return NextResponse.json(requirement);
     
-    // Devolver el requisito
-    return NextResponse.json({
-      id: requirement._id,
-      status: requirement.status,
-      created: requirement.created,
-      updated: requirement.updated,
-      diagramUrls: requirement.diagramUrls,
-      ...formData
-    });
-  } catch (error) {
-    console.error('Error al obtener requisito:', error);
+  } catch (error: unknown) {
+    console.error("Error al obtener requisito:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Error al recuperar el requisito' },
+      { error: "Error al obtener el requisito", details: errorMessage },
       { status: 500 }
     );
   }
@@ -73,51 +70,83 @@ export async function GET(
  * Actualiza un requisito existente
  */
 export async function PUT(
-  request: NextRequest,
-  { params }: RouteParams
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
     // Verificar autenticación
     const session = await auth();
     
-    if (!session) {
+    if (!session || !session.user) {
       return NextResponse.json(
-        { error: 'No autenticado' },
+        { error: "No autorizado" },
         { status: 401 }
       );
     }
     
-    // Extraer el ID antes de usarlo
-    const id = String(params.id);
+    // Obtener el ID del requisito de los parámetros de ruta
+    const requirementId = context.params.id;
+    
+    if (!requirementId) {
+      return NextResponse.json(
+        { error: "ID de requisito no proporcionado" },
+        { status: 400 }
+      );
+    }
     
     // Obtener los datos del cuerpo de la solicitud
     const data = await request.json();
     
-    // Verificar que el requisito existe y pertenece al usuario
-    const existingRequirement = await SystemRequirement.findOne({
-      _id: id,
-      userId: session.user?.id
+    // Conectar a la base de datos
+    const client = await clientPromise;
+    const db = client.db();
+    
+    // Verificar que el requisito exista y pertenezca al usuario
+    const existingRequirement = await db.collection("requirements").findOne({
+      _id: new ObjectId(requirementId),
+      userId: session.user.id
     });
     
     if (!existingRequirement) {
       return NextResponse.json(
-        { error: 'Requisito no encontrado o no autorizado' },
+        { error: "Requisito no encontrado o no autorizado" },
         { status: 404 }
       );
     }
     
+    // Preparar los datos a actualizar
+    const updateData = {
+      ...data,
+      updated: new Date(),
+      userId: session.user.id
+    };
+    
     // Actualizar el requisito
-    const updatedRequirement = await SystemRequirementService.update(
-      id,
-      session.user?.id as string,
-      data
+    const result = await db.collection("requirements").updateOne(
+      { _id: new ObjectId(requirementId) },
+      { $set: updateData }
     );
     
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { error: "No se pudo actualizar el requisito" },
+        { status: 500 }
+      );
+    }
+    
+    // Obtener el requisito actualizado
+    const updatedRequirement = await db.collection("requirements").findOne({
+      _id: new ObjectId(requirementId)
+    });
+    
+    // Retornar el requisito actualizado
     return NextResponse.json(updatedRequirement);
-  } catch (error) {
-    console.error('Error al actualizar requisito:', error);
+    
+  } catch (error: unknown) {
+    console.error("Error al actualizar requisito:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Error al actualizar el requisito' },
+      { error: "Error al actualizar el requisito", details: errorMessage },
       { status: 500 }
     );
   }
@@ -128,47 +157,71 @@ export async function PUT(
  * Elimina un requisito existente
  */
 export async function DELETE(
-  request: NextRequest,
-  { params }: RouteParams
+  request: Request,
+  context: { params: { id: string } }
 ) {
   try {
     // Verificar autenticación
     const session = await auth();
     
-    if (!session) {
+    if (!session || !session.user) {
       return NextResponse.json(
-        { error: 'No autenticado' },
+        { error: "No autorizado" },
         { status: 401 }
       );
     }
     
-    // Extraer el ID antes de usarlo
-    const id = String(params.id);
+    // Obtener el ID del requisito de los parámetros de ruta
+    const requirementId = context.params.id;
     
-    // Verificar que el requisito existe y pertenece al usuario
-    const existingRequirement = await SystemRequirement.findOne({
-      _id: id,
-      userId: session.user?.id
+    if (!requirementId) {
+      return NextResponse.json(
+        { error: "ID de requisito no proporcionado" },
+        { status: 400 }
+      );
+    }
+    
+    // Conectar a la base de datos
+    const client = await clientPromise;
+    const db = client.db();
+    
+    // Verificar que el requisito exista y pertenezca al usuario
+    const existingRequirement = await db.collection("requirements").findOne({
+      _id: new ObjectId(requirementId),
+      userId: session.user.id
     });
     
     if (!existingRequirement) {
       return NextResponse.json(
-        { error: 'Requisito no encontrado o no autorizado' },
+        { error: "Requisito no encontrado o no autorizado" },
         { status: 404 }
       );
     }
     
     // Eliminar el requisito
-    await SystemRequirement.deleteOne({
-      _id: id,
-      userId: session.user?.id
+    const result = await db.collection("requirements").deleteOne({
+      _id: new ObjectId(requirementId),
+      userId: session.user.id
     });
     
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error al eliminar requisito:', error);
+    if (result.deletedCount === 0) {
+      return NextResponse.json(
+        { error: "No se pudo eliminar el requisito" },
+        { status: 500 }
+      );
+    }
+    
+    // Retornar éxito
+    return NextResponse.json({
+      success: true,
+      message: "Requisito eliminado correctamente"
+    });
+    
+  } catch (error: unknown) {
+    console.error("Error al eliminar requisito:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Error al eliminar el requisito' },
+      { error: "Error al eliminar el requisito", details: errorMessage },
       { status: 500 }
     );
   }

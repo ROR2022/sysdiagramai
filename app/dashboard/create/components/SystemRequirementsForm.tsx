@@ -92,7 +92,9 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
         additionalContext: initialData.additionalContext || defaultFormData.additionalContext
       });
     }
-  }, [initialData]);
+  }, 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [initialData]);
 
   // Función auxiliar para obtener el título del paso
   const getStepTitle = (step: number): string => {

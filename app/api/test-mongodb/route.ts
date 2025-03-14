@@ -6,66 +6,39 @@ export const runtime = 'nodejs';
 
 // Endpoint de diagnóstico para probar la conexión con MongoDB
 export async function GET() {
-  console.log("🔄 Iniciando diagnóstico de conexión a MongoDB...");
+  console.log("[API] Iniciando diagnóstico de conexión MongoDB...");
   
   try {
     // Verificar conexión básica
-    console.log("🔄 Verificando conexión básica...");
     const isConnected = await checkMongoConnection();
     
     if (!isConnected) {
-      console.error("❌ Fallo en la verificación de conexión básica");
-      return NextResponse.json({
-        success: false,
-        error: "La verificación básica de conexión falló",
-        timestamp: new Date().toISOString()
+      return NextResponse.json({ 
+        error: "No se pudo conectar a MongoDB" 
       }, { status: 500 });
     }
     
-    console.log("✅ Verificación básica exitosa");
-    
-    // Obtener información del servidor
-    console.log("🔄 Obteniendo información del servidor...");
+    // Obtener información del servidor y listar bases de datos
     const client = await clientPromise;
+    const serverInfo = await client.db("admin").command({ serverStatus: 1 });
     const adminDb = client.db("admin");
+    const dbs = await adminDb.admin().listDatabases();
     
-    // Información de construcción del servidor
-    const buildInfo = await adminDb.command({ buildInfo: 1 });
-    
-    // Verificar la base de datos del proyecto
-    console.log("🔄 Verificando la base de datos sysdiagramai...");
-    const db = client.db("sysdiagramai");
-    const collections = await db.listCollections().toArray();
-    
-    // Listar bases de datos disponibles
-    console.log("🔄 Listando bases de datos disponibles...");
-    const databasesList = await client.db().admin().listDatabases();
-    
-    return NextResponse.json({
-      success: true,
-      connection: {
-        status: "connected",
-        timestamp: new Date().toISOString()
-      },
+    return NextResponse.json({ 
+      status: "Conectado a MongoDB correctamente",
       serverInfo: {
-        version: buildInfo.version,
-        gitVersion: buildInfo.gitVersion
+        version: serverInfo.version,
+        uptime: serverInfo.uptime,
+        connections: serverInfo.connections
       },
-      databases: databasesList.databases.map(db => ({
-        name: db.name,
-        sizeOnDisk: db.sizeOnDisk
-      })),
-      sysdiagramaiDatabase: {
-        collections: collections.map(col => col.name)
-      }
-    }, { status: 200 });
-  } catch (error) {
-    console.error("❌ Error durante el diagnóstico:", error);
-    
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : "Error desconocido",
-      timestamp: new Date().toISOString()
+      databases: dbs.databases.map(db => db.name)
+    });
+  } catch (error: unknown) {
+    console.error("[API] Error en diagnóstico MongoDB:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ 
+      error: "Error al realizar diagnóstico de MongoDB",
+      details: errorMessage
     }, { status: 500 });
   }
 } 

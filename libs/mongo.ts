@@ -1,38 +1,51 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
 
-  if (!process.env.MONGODB_URI) {
-    throw new Error('Invalid/Missing environment variable: "MONGO_URI"');
-  }
-  
-  const uri = process.env.MONGODB_URI;
-  const options = {
-    serverApi: {
-      version: ServerApiVersion.v1,
-      strict: true,
-      deprecationErrors: true,
-    },
+if (!process.env.MONGODB_URI) {
+  throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
+}
+
+const uri = process.env.MONGODB_URI;
+const options = {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
+};
+
+let client;
+let clientPromise: Promise<MongoClient>;
+
+if (process.env.NODE_ENV === "development") {
+  const globalWithMongo = global as typeof globalThis & {
+    _mongoClientPromise: Promise<MongoClient> | undefined;
   };
   
-  let client;
-  let clientPromise: Promise<MongoClient>;
-  
-  if (process.env.NODE_ENV === "development") {
-    const globalWithMongo = global as typeof globalThis & {
-      _mongoClientPromise: Promise<MongoClient> | undefined;
-    };
-    globalWithMongo._mongoClientPromise = undefined;
-  
-    if (!globalWithMongo._mongoClientPromise) {
-      client = new MongoClient(uri, options);
-      globalWithMongo._mongoClientPromise = client.connect();
-    }
-    clientPromise = globalWithMongo._mongoClientPromise;
-  } else {
+  if (!globalWithMongo._mongoClientPromise) {
     client = new MongoClient(uri, options);
-    clientPromise = client.connect();
+    globalWithMongo._mongoClientPromise = client.connect();
   }
+  clientPromise = globalWithMongo._mongoClientPromise;
+} else {
+  client = new MongoClient(uri, options);
+  clientPromise = client.connect();
+}
+
+// Función para verificar la conexión a MongoDB
+export const checkMongoConnection = async (): Promise<boolean> => {
+  try {
+    const client = await clientPromise;
+    // Ejecutar un comando simple para verificar que la conexión está activa
+    await client.db("admin").command({ ping: 1 });
+    console.log("[MongoDB] ✅ Conexión verificada correctamente");
+    return true;
+  } catch (error) {
+    console.error("[MongoDB] ❌ Error al verificar conexión:", error);
+    return false;
+  }
+};
   
-  export default clientPromise;
+export default clientPromise;
 
 
 /* import { MongoClient } from "mongodb";
