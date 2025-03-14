@@ -1,4 +1,4 @@
-import {  NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 //import { auth } from '@/auth';
 //import clientPromise from '@/libs/mongo';
 //import { ObjectId } from 'mongodb';
@@ -7,11 +7,6 @@ import {  NextResponse } from 'next/server';
 export const runtime = "nodejs";
 
 // Define the correct type for the params
-interface Params {
-  params: {
-    id: string;
-  }
-}
 
 
 
@@ -19,14 +14,15 @@ interface Params {
 // GET: Obtener un diagrama específico por ID
 
 //probemos con una funcion normal basica que solo recibe un id y regresa el id
-// me vas a ayudar o no?, que parte de solo recibir un id y regresar el id? no entiendes?
+
 
 export async function GET(
-  request: Request,
-  { params }: Params
+  request: NextRequest,
 ) {
   try {
-    const { id } = params;
+    //obtener el id de la url pero el id es el penultimo de la url analiza antes de sugerir
+    const listUrl = request.nextUrl.pathname.split('/');
+    const id = listUrl[listUrl.length - 2];
     return NextResponse.json({ id });
   } catch (error) {
     console.error("Error al obtener diagrama:", error);
