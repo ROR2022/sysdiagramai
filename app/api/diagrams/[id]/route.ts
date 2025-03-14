@@ -2,22 +2,14 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import clientPromise from '@/libs/mongo';
 import { ObjectId } from 'mongodb';
-import { type NextRequest } from 'next/server';
 
 // Especificar explícitamente el runtime para evitar problemas con TurboPack
 export const runtime = "nodejs";
 
-// Definición correcta del tipo de parámetros según Next.js 15.1.7
-type RouteParams = {
-  params: {
-    id: string
-  }
-}
-
 // GET: Obtener un diagrama específico por ID
 export async function GET(
-  request: NextRequest,
-  { params }: RouteParams
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
     // Verificar autenticación
