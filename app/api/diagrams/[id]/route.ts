@@ -2,21 +2,14 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import clientPromise from '@/libs/mongo';
 import { ObjectId } from 'mongodb';
-import { type NextRequest } from 'next/server';
 
 // Especificar explícitamente el runtime para evitar problemas con TurboPack
 export const runtime = "nodejs";
 
-interface RequestContext {
-  params: {
-    id: string;
-  };
-}
-
 // GET: Obtener un diagrama específico por ID
 export async function GET(
-  req: NextRequest,
-  ctx: RequestContext
+  request: Request,
+  context: { params: { id: string } } // Cambiado a `context`
 ) {
   try {
     // Verificar autenticación
@@ -25,7 +18,7 @@ export async function GET(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const diagramId = ctx.params.id;
+    const diagramId = context.params.id; // Acceder a `params` desde `context`
 
     if (!ObjectId.isValid(diagramId)) {
       return NextResponse.json({ error: "ID de diagrama inválido" }, { status: 400 });
