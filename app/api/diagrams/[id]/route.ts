@@ -1,7 +1,7 @@
-import { type NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import clientPromise from '@/libs/mongo';
-import { ObjectId } from 'mongodb';
+import {  NextResponse } from 'next/server';
+//import { auth } from '@/auth';
+//import clientPromise from '@/libs/mongo';
+//import { ObjectId } from 'mongodb';
 
 // Especificar explícitamente el runtime para evitar problemas con TurboPack
 export const runtime = "nodejs";
@@ -13,8 +13,32 @@ interface Params {
   }
 }
 
+
+
+
 // GET: Obtener un diagrama específico por ID
+
+//probemos con una funcion normal basica que solo recibe un id y regresa el id
+// me vas a ayudar o no?, que parte de solo recibir un id y regresar el id? no entiendes?
+
 export async function GET(
+  request: Request,
+  { params }: Params
+) {
+  try {
+    const { id } = params;
+    return NextResponse.json({ id });
+  } catch (error) {
+    console.error("Error al obtener diagrama:", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    );
+  }
+}
+
+
+/* export async function GET(
   request: NextRequest,
   { params }: Params
 ) {
@@ -64,4 +88,4 @@ export async function GET(
       { status: 500 }
     );
   }
-}
+} */
