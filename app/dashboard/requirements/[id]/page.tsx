@@ -75,7 +75,7 @@ export default async function RequirementPage({ params }: PageProps) {
   let requirement: ISystemRequirement | null = null;
   try {
     // Extraer el ID de la url 
-    const id = await params.id;
+    const id = params.id;
     if (!id) {
       console.error('No se encontró el ID en la URL', id);
       notFound();
