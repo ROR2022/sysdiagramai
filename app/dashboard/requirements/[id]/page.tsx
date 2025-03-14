@@ -1,4 +1,3 @@
-
 import { notFound } from 'next/navigation';
 import { getRequirementById } from '@/libs/data/requirements';
 import { auth } from '@/auth';
@@ -7,58 +6,15 @@ import DiagramGenerator from './components/DiagramGenerator';
 import DiagramViewer from './components/DiagramViewer';
 import { ISystemRequirement } from '@/libs/models/systemRequirement';
 
-/* interface PageProps {
-  params: {
-    id: string;
+// Se modifica la interfaz para que params sea una Promise
+interface PageProps {
+  params: Promise<{ id: string }>;
+  searchParams?: {
+    [key: string]: string | string[] | undefined;
   };
 }
 
-export async function generateMetadata(
-  { params }: PageProps
-): Promise<Metadata> {
-  const session = await auth();
-  if (!session?.user) {
-    return {
-      title: 'No autorizado',
-    };
-  }
-
-  try {
-    // Extraer el ID antes de usarlo
-    const myParams = await params;
-    const id = String(myParams.id);
-    const requirement: ISystemRequirement | null = await getRequirementById(id, session.user.id as string);
-    
-    if (!requirement) {
-      return {
-        title: 'Requisito no encontrado',
-      };
-    }
-
-    return {
-      title: `${requirement.name} | SysDiagramAI`,
-      description: `Detalles y diagramas para "${requirement.name}"`,
-    };
-  } catch (error) {
-    console.error('Error al generar metadata:', error);
-    return {
-      title: 'Error | SysDiagramAI',
-    };
-  }
-} */
-
-
-  interface PageProps {
-    params: {
-      id: string;
-    };
-    searchParams?: {
-      [key: string]: string | string[] | undefined;
-    };
-  }
-
 export default async function RequirementPage({ params }: PageProps) {
-
   const session = await auth();
   
   if (!session?.user) {
@@ -74,8 +30,10 @@ export default async function RequirementPage({ params }: PageProps) {
 
   let requirement: ISystemRequirement | null = null;
   try {
-    // Extraer el ID de la url 
-    const id = params.id;
+    // Ahora esperamos la resolución de params ya que es una Promise
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
+    
     if (!id) {
       console.error('No se encontró el ID en la URL', id);
       notFound();
