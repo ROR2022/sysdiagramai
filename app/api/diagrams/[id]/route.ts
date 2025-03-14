@@ -1,15 +1,23 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import clientPromise from '@/libs/mongo';
 import { ObjectId } from 'mongodb';
+import { type NextRequest } from 'next/server';
 
 // Especificar explícitamente el runtime para evitar problemas con TurboPack
 export const runtime = "nodejs";
 
+// Definición correcta del tipo de parámetros según Next.js 15.1.7
+type RouteParams = {
+  params: {
+    id: string
+  }
+}
+
 // GET: Obtener un diagrama específico por ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id?: string } }
+  { params }: RouteParams
 ) {
   try {
     // Verificar autenticación
@@ -18,16 +26,9 @@ export async function GET(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    // Validar `params`
-    if (!params?.id) {
-      console.error("ID de diagrama no proporcionado");
-      return NextResponse.json({ error: "ID de diagrama no proporcionado" }, { status: 400 });
-    }
-
     const diagramId = params.id;
 
     if (!ObjectId.isValid(diagramId)) {
-      console.error("ID de diagrama inválido:", diagramId);
       return NextResponse.json({ error: "ID de diagrama inválido" }, { status: 400 });
     }
 
