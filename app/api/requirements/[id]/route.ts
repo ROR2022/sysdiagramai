@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
 import clientPromise from '@/libs/mongo';
 import { ObjectId } from 'mongodb';
@@ -13,15 +13,9 @@ export const runtime = "nodejs";
 
 
 // Define the correct type for the params
-interface DiagramParams {
-  params: {
-    id: string;
-  }
-}
 
 export async function GET(
-  request: Request,
-  { params }: DiagramParams
+  request: NextRequest,
 ) {
   try {
     // Verificar autenticación
@@ -34,7 +28,8 @@ export async function GET(
       );
     }
     
-    const { id } = params;
+    const listUrl = request.nextUrl.pathname.split('/');
+    const id = listUrl[listUrl.length - 2];
     // Obtener el ID del requisito de los parámetros de ruta
     const requirementId = id;
     
