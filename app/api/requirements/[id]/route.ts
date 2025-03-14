@@ -10,9 +10,18 @@ export const runtime = "nodejs";
  * GET /api/requirements/[id]
  * Obtiene un requisito específico por ID
  */
+
+
+// Define the correct type for the params
+interface DiagramParams {
+  params: {
+    id: string;
+  }
+}
+
 export async function GET(
   request: Request,
-  context: { params: { id: string } }
+  { params }: DiagramParams
 ) {
   try {
     // Verificar autenticación
@@ -25,8 +34,9 @@ export async function GET(
       );
     }
     
+    const { id } = params;
     // Obtener el ID del requisito de los parámetros de ruta
-    const requirementId = context.params.id;
+    const requirementId = id;
     
     if (!requirementId) {
       return NextResponse.json(

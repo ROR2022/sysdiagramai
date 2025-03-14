@@ -6,10 +6,17 @@ import { ObjectId } from 'mongodb';
 // Especificar explícitamente el runtime para evitar problemas con TurboPack
 export const runtime = "nodejs";
 
+// Define the correct type for the params
+interface DiagramParams {
+  params: {
+    id: string;
+  }
+}
+
 // GET: Obtener un diagrama específico por ID
 export async function GET(
   request: Request,
-  context: { params: { id: string } } // Cambiado a `context`
+  { params }: DiagramParams
 ) {
   try {
     // Verificar autenticación
@@ -18,7 +25,9 @@ export async function GET(
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const diagramId = context.params.id; // Acceder a `params` desde `context`
+    const { id } = params;
+
+    const diagramId = id; 
 
     if (!ObjectId.isValid(diagramId)) {
       return NextResponse.json({ error: "ID de diagrama inválido" }, { status: 400 });
