@@ -1,4 +1,6 @@
-import { Metadata } from 'next';
+//import { Metadata } from 'next';
+//import { type NextPage } from 'next';
+import { type NextRequest } from 'next/server';
 import { notFound } from 'next/navigation';
 import { getRequirementById } from '@/libs/data/requirements';
 import { auth } from '@/auth';
@@ -7,7 +9,7 @@ import DiagramGenerator from './components/DiagramGenerator';
 import DiagramViewer from './components/DiagramViewer';
 import { ISystemRequirement } from '@/libs/models/systemRequirement';
 
-interface PageProps {
+/* interface PageProps {
   params: {
     id: string;
   };
@@ -45,9 +47,10 @@ export async function generateMetadata(
       title: 'Error | SysDiagramAI',
     };
   }
-}
+} */
 
-export default async function RequirementPage({ params }: PageProps) {
+export default async function RequirementPage(request: NextRequest) {
+
   const session = await auth();
   
   if (!session?.user) {
@@ -63,9 +66,13 @@ export default async function RequirementPage({ params }: PageProps) {
 
   let requirement: ISystemRequirement | null = null;
   try {
-    // Extraer el ID antes de usarlo
-    const myParams = await params;
-    const id = String(myParams.id);
+    // Extraer el ID de la url 
+    const listUrl = request.nextUrl.pathname.split('/');
+    const id = listUrl[listUrl.length - 2];
+    if (!id) {
+      console.error('No se encontró el ID en la URL', id, listUrl);
+      notFound();
+    }
     requirement = await getRequirementById(id, session.user.id as string);
   } catch (error) {
     console.error('Error al obtener el requisito:', error);
