@@ -6,12 +6,10 @@ import DiagramGenerator from './components/DiagramGenerator';
 import DiagramViewer from './components/DiagramViewer';
 import { ISystemRequirement } from '@/libs/models/systemRequirement';
 
-// Se modifica la interfaz para que params sea una Promise
+// Modificamos la interfaz para que tanto params como searchParams sean Promises
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams?: {
-    [key: string]: string | string[] | undefined;
-  };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 export default async function RequirementPage({ params }: PageProps) {
@@ -30,7 +28,7 @@ export default async function RequirementPage({ params }: PageProps) {
 
   let requirement: ISystemRequirement | null = null;
   try {
-    // Ahora esperamos la resolución de params ya que es una Promise
+    // Esperamos la resolución de params
     const resolvedParams = await params;
     const id = resolvedParams.id;
     
