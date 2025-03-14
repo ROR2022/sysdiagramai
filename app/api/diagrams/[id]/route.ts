@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import clientPromise from '@/libs/mongo';
 import { ObjectId } from 'mongodb';
@@ -7,7 +7,7 @@ import { ObjectId } from 'mongodb';
 export const runtime = "nodejs";
 
 // Define the correct type for the params
-interface DiagramParams {
+interface Params {
   params: {
     id: string;
   }
@@ -15,8 +15,8 @@ interface DiagramParams {
 
 // GET: Obtener un diagrama específico por ID
 export async function GET(
-  request: Request,
-  { params }: DiagramParams
+  request: NextRequest,
+  { params }: Params
 ) {
   try {
     // Verificar autenticación
