@@ -114,18 +114,18 @@ export default async function RequirementsPage() {
                     <div>
                       <h2 className="card-title">{requirement.name}</h2>
                       <p className="text-sm opacity-70 mb-2">
-                        {formatDate(requirement.updated)}
+                        {formatDate(requirement.updated || new Date())}
                       </p>
                       <p className="text-sm line-clamp-2">{requirement.description}</p>
                     </div>
                     <div className="flex flex-col items-end">
                       <div className="badge" 
                         style={{ 
-                          backgroundColor: getStatusColor(requirement.status),
+                          backgroundColor: getStatusColor(requirement.status || 'draft'),
                           color: 'white' 
                         }}
                       >
-                        {getStatusText(requirement.status)}
+                        {getStatusText(requirement.status || 'draft')}
                       </div>
                       {requirement.diagramUrls && requirement.diagramUrls.length > 0 && (
                         <div className="text-xs mt-2">
