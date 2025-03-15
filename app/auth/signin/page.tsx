@@ -1,12 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 // Eliminamos la importación estática
 //import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 // export const runtime = 'nodejs'; // Descomenta si es necesario
+
+interface GetParamsProps {
+  setSignInProps: (params: ISignInProps) => void;
+}
+
+const GetParams = ({setSignInProps}: GetParamsProps) => {
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const message = searchParams.get('message') || '';
+  const error_param = searchParams.get('error') || '';
+  const action = searchParams.get('action') || '';
+
+  useEffect(() => {
+    setSignInProps({ callbackUrl, message, error: error_param, action });
+  }, 
+  //eslint-disable-next-line react-hooks/exhaustive-deps
+  [callbackUrl, message, error_param, action]);
+  return null;
+}
 
 // Función auxiliar para iniciar sesión usando dynamic import
 async function handleSignInWithCredentials(options: { 
@@ -35,6 +54,19 @@ async function handleSignInWithGoogle(callbackUrl?: string) {
   }
 }
 
+interface ISignInProps {
+  callbackUrl?: string;
+  message?: string;
+  error?: string;
+  action?: string;
+}
+ const initialSignInProps: ISignInProps = {
+  callbackUrl: '/dashboard',
+  message: '',
+  error: '',
+  action: ''
+ }
+
 export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,40 +75,37 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [showEmailInput, setShowEmailInput] = useState(false);
   const [authMethod, setAuthMethod] = useState<'magic' | 'password'>('magic');
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
-  const message = searchParams.get('message');
-  const error_param = searchParams.get('error');
-  const action = searchParams.get('action');
+  const [signInProps, setSignInProps] = useState<ISignInProps>(initialSignInProps);
+  
 
   useEffect(() => {
     console.log('[SignInForm] URL:', window.location.href);
-    console.log('[SignInForm] callbackUrl:', callbackUrl);
+    console.log('[SignInForm] callbackUrl:', signInProps.callbackUrl);
 
     // Verificar si hay mensajes de éxito en la URL
-    if (message === 'check-email') {
+    if (signInProps.message === 'check-email') {
       setSuccessMessage('Te hemos enviado un enlace para iniciar sesión a tu email.');
-    } else if (message === 'verified') {
+    } else if (signInProps.message === 'verified') {
       setSuccessMessage('¡Email verificado correctamente! Ahora puedes iniciar sesión.');
-    } else if (message === 'emailVerified' && action === 'refresh') {
+    } else if (signInProps.message === 'emailVerified' && signInProps.action === 'refresh') {
       setSuccessMessage('¡Tu email ha sido verificado! Por favor inicia sesión nuevamente para actualizar tu sesión.');
-    } else if (message === 'check-email') {
+    } else if (signInProps.message === 'check-email') {
       setSuccessMessage('Revisa tu email para iniciar sesión');
     }
 
     // Verificar si hay errores de autenticación en la URL
-    if (error_param === 'CredentialsSignin') {
-      console.log('[SignInForm] Error en URL:', error_param);
+    if (signInProps.error === 'CredentialsSignin') {
+      console.log('[SignInForm] Error en URL:', signInProps.error);
       setError('Email o contraseña incorrectos');
     }
-  }, [callbackUrl, message, error_param, action]);
+  }, [signInProps.callbackUrl, signInProps.message, signInProps.error, signInProps.action]);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      await handleSignInWithGoogle(callbackUrl);
+      await handleSignInWithGoogle(signInProps.callbackUrl);
     } catch (error) {
       console.error('[SignInForm] Error al iniciar sesión con Google:', error);
       setError('Error al iniciar sesión con Google');
@@ -105,7 +134,7 @@ export default function SignIn() {
       console.log('[SignInForm] Enviando inicio de sesión con email mágico...');
       await handleSignInWithCredentials({ 
         email, 
-        callbackUrl, 
+        callbackUrl: signInProps.callbackUrl, 
         redirect: false 
       });
       
@@ -142,7 +171,7 @@ export default function SignIn() {
     
     try {
       console.log("[SignInForm] Autenticando con credenciales:", { email });
-      console.log("[SignInForm] Valor de callbackUrl:", callbackUrl);
+      console.log("[SignInForm] Valor de callbackUrl:", signInProps.callbackUrl);
       console.log("[SignInForm] Estrategia de sesión actualizada a JWT para depuración");
       console.log("[SignInForm] NEXTAUTH_URL:", process.env.NEXTAUTH_URL || 'no establecido');
       
@@ -150,9 +179,9 @@ export default function SignIn() {
       console.log("[SignInForm] Llamando a signIn con redirect:true...");
       
       // Asegurarnos de que el callbackUrl es absoluto
-      const absoluteCallbackUrl = callbackUrl.startsWith('http') 
-        ? callbackUrl 
-        : `${process.env.NEXTAUTH_URL || window.location.origin}${callbackUrl}`;
+      const absoluteCallbackUrl = signInProps.callbackUrl?.startsWith('http') 
+        ? signInProps.callbackUrl 
+        : `${process.env.NEXTAUTH_URL || window.location.origin}${signInProps.callbackUrl}`;
         
       console.log("[SignInForm] URL de callback absoluta:", absoluteCallbackUrl);
       
@@ -176,6 +205,10 @@ export default function SignIn() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 relative overflow-hidden">
+      <Suspense fallback={<div>Cargando...</div>}>
+        <GetParams setSignInProps={setSignInProps} />
+      </Suspense>
+      
       {/* Enlace para regresar al inicio */}
       <Link href="/" className="absolute top-6 left-6 btn btn-ghost btn-circle text-base-content hover:bg-base-300/50 z-20 transition-all duration-300">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

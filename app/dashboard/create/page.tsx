@@ -1,18 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import SystemRequirementsForm from './components/SystemRequirementsForm';
 import { toast } from 'react-hot-toast';
 import { FormData } from './components/types';
 
+
+interface GetParamsProps {
+  setRequirementId: (id: string) => void;
+}
+
+const GetParams = ({setRequirementId}: GetParamsProps) => {
+  const searchParams = useSearchParams();
+  const requirementId = searchParams.get('id');
+  useEffect(() => {
+    setRequirementId(requirementId || '');
+  }, [requirementId, setRequirementId]);
+  return null;
+}
+
 export default function CreateDiagramPage() {
   const [initialData, setInitialData] = useState<FormData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const searchParams = useSearchParams();
-  const requirementId = searchParams.get('id');
+  const [requirementId, setRequirementId] = useState<string | null>(null);
   
   // Cargar datos existentes si hay un ID en la URL
   useEffect(() => {
@@ -47,6 +60,9 @@ export default function CreateDiagramPage() {
 
   return (
     <div className="w-full text-base-content">
+      <Suspense fallback={<div>Cargando...</div>}>
+        <GetParams setRequirementId={setRequirementId} />
+      </Suspense>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold">{requirementId ? 'Editar Diagrama' : 'Crear Nuevo Diagrama'}</h1>

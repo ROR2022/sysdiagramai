@@ -29,8 +29,8 @@ export default async function RequirementPage({ params }: PageProps) {
   let requirement: ISystemRequirement | null = null;
   try {
     // Esperamos la resolución de params
-    const resolvedParams = await params;
-    const id = resolvedParams.id;
+    const { id } = await params;
+    //const id = resolvedParams.id;
     
     if (!id) {
       console.error('No se encontró el ID en la URL', id);

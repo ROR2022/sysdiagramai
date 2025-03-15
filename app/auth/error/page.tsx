@@ -1,12 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function AuthError() {
+interface GetParamsProps {
+  setError: (error: string) => void;
+}
+
+const GetParams = ({setError}: GetParamsProps) => {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
+
+  useEffect(() => {
+    setError(error || '');
+  }, [error, setError]);
+
+  return null;
+}
+
+export default function AuthError() {
+  const [error, setError] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
 
   useEffect(() => {
@@ -32,6 +46,9 @@ export default function AuthError() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 relative overflow-hidden">
+      <Suspense fallback={<div>Cargando...</div>}>
+        <GetParams setError={setError} />
+      </Suspense>
       {/* Enlace para regresar al inicio */}
       <Link href="/" className="absolute top-6 left-6 btn btn-ghost btn-circle text-base-content hover:bg-base-300/50 z-20 transition-all duration-300">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
