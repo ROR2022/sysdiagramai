@@ -32,7 +32,6 @@
     "resend": "^4.1.2",
     "stream-browserify": "^3.0.0",
     "stripe": "^17.7.0",
-    "style-loader": "^4.0.0",
     "sysdiagramai": "file:",
     "theme-change": "^2.5.0",
     "util": "^0.12.5",
