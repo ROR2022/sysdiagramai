@@ -1,6 +1,13 @@
-import { SystemRequirement, ISystemRequirement } from "../models/systemRequirement";
+import { ISystemRequirement } from "../models/systemRequirement";
 import { FormData } from "@/app/dashboard/create/components/types";
-import connectDB from "../mongoose";
+import { 
+  createSystemRequirement, 
+  getSystemRequirementById, 
+  updateSystemRequirementById,
+  getSystemRequirementsByUserId,
+  deleteSystemRequirementById
+} from "@/app/api/utils/systemRequirement";
+//import connectDB from "../mongoose";
 
 // Servicio para manejar las operaciones con los requisitos del sistema
 export const SystemRequirementService = {
@@ -11,7 +18,7 @@ export const SystemRequirementService = {
    * @returns El requisito creado
    */
   async create(userId: string, formData: FormData): Promise<ISystemRequirement> {
-    await connectDB();
+    
     
     const data = {
       userId,
@@ -25,9 +32,8 @@ export const SystemRequirementService = {
       status: "draft" as const
     };
     
-    const systemRequirement = new SystemRequirement(data);
-    await systemRequirement.save();
-    return systemRequirement;
+    
+    return await createSystemRequirement(data);
   },
 
   /**
@@ -38,7 +44,7 @@ export const SystemRequirementService = {
    * @returns El requisito actualizado
    */
   async update(id: string, userId: string, formData: FormData): Promise<ISystemRequirement | null> {
-    await connectDB();
+    
     
     const updateData = {
       name: formData.basicInfo.projectName,
@@ -51,11 +57,7 @@ export const SystemRequirementService = {
       updated: new Date()
     };
     
-    return SystemRequirement.findOneAndUpdate(
-      { _id: id, userId }, 
-      updateData,
-      { new: true }
-    );
+    return await updateSystemRequirementById(id, updateData);
   },
 
   /**
@@ -65,8 +67,8 @@ export const SystemRequirementService = {
    * @returns El requisito si existe
    */
   async getById(id: string, userId: string): Promise<ISystemRequirement | null> {
-    await connectDB();
-    return SystemRequirement.findOne({ _id: id, userId });
+    
+    return await getSystemRequirementById(id, userId);
   },
 
   /**
@@ -75,8 +77,9 @@ export const SystemRequirementService = {
    * @returns Lista de requisitos
    */
   async getAllByUser(userId: string): Promise<ISystemRequirement[]> {
-    await connectDB();
-    return SystemRequirement.find({ userId }).sort({ updated: -1 });
+    //await connectDB();
+    const requirements = await getSystemRequirementsByUserId(userId);
+    return requirements.map(req => req as ISystemRequirement);
   },
 
   /**
@@ -86,8 +89,9 @@ export const SystemRequirementService = {
    * @returns true si fue eliminado, false si no
    */
   async delete(id: string, userId: string): Promise<boolean> {
-    await connectDB();
-    const result = await SystemRequirement.deleteOne({ _id: id, userId });
+    //await connectDB();
+    console.log("deleting..", id, userId);
+    const result = await deleteSystemRequirementById(id);
     return result.deletedCount > 0;
   },
 
@@ -103,12 +107,9 @@ export const SystemRequirementService = {
     userId: string, 
     status: "draft" | "completed" | "generating" | "failed"
   ): Promise<ISystemRequirement | null> {
-    await connectDB();
-    return SystemRequirement.findOneAndUpdate(
-      { _id: id, userId },
-      { status, updated: new Date() },
-      { new: true }
-    );
+    //await connectDB();
+    return await updateSystemRequirementById(id, { status, updated: new Date() });
+  
   },
 
   /**
@@ -123,12 +124,18 @@ export const SystemRequirementService = {
     userId: string,
     diagramUrl: string
   ): Promise<ISystemRequirement | null> {
-    await connectDB();
-    return SystemRequirement.findOneAndUpdate(
+
+    return await updateSystemRequirementById(id,{
+      diagramUrl,
+      status: "completed",
+      updated: new Date()
+    })
+    //await connectDB();
+    /* return SystemRequirement.findOneAndUpdate(
       { _id: id, userId },
       { diagramUrl, status: "completed", updated: new Date() },
       { new: true }
-    );
+    ); */
   },
 
   /**
@@ -139,14 +146,24 @@ export const SystemRequirementService = {
   toFormData(systemRequirement: ISystemRequirement): FormData {
     return {
       basicInfo: {
-        projectName: systemRequirement.name,
-        description: systemRequirement.description,
-        applicationType: systemRequirement.applicationType,
+        projectName: systemRequirement.name || "",
+        description: systemRequirement.description || "",
+        applicationType: systemRequirement.applicationType || "",
       },
-      functionalRequirements: systemRequirement.functionalRequirements,
-      nonFunctionalRequirements: systemRequirement.nonFunctionalRequirements,
-      techPreferences: systemRequirement.techPreferences,
-      additionalContext: systemRequirement.additionalContext,
+      functionalRequirements: systemRequirement.functionalRequirements || [],
+      nonFunctionalRequirements: {
+        scalability: systemRequirement.nonFunctionalRequirements?.scalability || "",
+        availability: systemRequirement.nonFunctionalRequirements?.availability || "",
+        security: systemRequirement.nonFunctionalRequirements?.security || "",
+        performance: systemRequirement.nonFunctionalRequirements?.performance || ""
+      },
+      techPreferences: {
+        backendLanguage: systemRequirement.techPreferences?.backendLanguage || "",
+        frameworks: systemRequirement.techPreferences?.frameworks || [],
+        databases: systemRequirement.techPreferences?.databases || [],
+        architecture: systemRequirement.techPreferences?.architecture || ""
+      },
+      additionalContext: systemRequirement.additionalContext || ""
     };
   }
 };

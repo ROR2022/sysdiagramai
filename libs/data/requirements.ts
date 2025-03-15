@@ -1,6 +1,6 @@
-import dbConnect from '../dbConnect';
-import { SystemRequirement, ISystemRequirement } from '@/libs/models/systemRequirement';
-
+//import dbConnect from '../dbConnect';
+import { ISystemRequirement } from '@/libs/models/systemRequirement';
+import { getSystemRequirementById, getSystemRequirementsByUserId } from '@/app/api/utils/systemRequirement';
 /**
  * Obtener todos los requisitos de un usuario
  * @param userId ID del usuario
@@ -9,7 +9,7 @@ import { SystemRequirement, ISystemRequirement } from '@/libs/models/systemRequi
 export async function getRequirementsByUserId(userId: string): Promise<ISystemRequirement[]> {
   console.log(`Buscando requisitos para el usuario con ID: ${userId}`);
   
-  await dbConnect();
+  //await dbConnect();
   
   try {
     console.log(`Ejecutando consulta: SystemRequirement.find({ userId: "${userId}" })`);
@@ -17,9 +17,7 @@ export async function getRequirementsByUserId(userId: string): Promise<ISystemRe
     //const todos = await SystemRequirement.find({}).lean();
     //console.log(`Todos los requisitos encontrados: ${todos.length}`);
     
-    const requirements = await SystemRequirement.find({ userId })
-      .sort({ updated: -1 })
-      .lean();
+    const requirements = await getSystemRequirementsByUserId(userId);
     
     console.log(`Requisitos encontrados: ${requirements.length}`);
     
@@ -51,13 +49,10 @@ export async function getRequirementsByUserId(userId: string): Promise<ISystemRe
  * @returns El requisito si existe y pertenece al usuario, null en caso contrario
  */
 export async function getRequirementById(id: string, userId: string): Promise<ISystemRequirement | null> {
-  await dbConnect();
+  //await dbConnect();
   
   try {
-    const requirement = await SystemRequirement.findOne({
-      _id: id,
-      userId
-    }).lean();
+    const requirement = await getSystemRequirementById(id, userId);
     
     // Devolvemos null si no se encuentra el requisito
     if (!requirement) return null;

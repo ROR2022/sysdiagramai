@@ -1,13 +1,10 @@
-import { OpenAI } from 'openai';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { SystemRequirement, ISystemRequirement, DiagramContent } from '../models/systemRequirement';
+import { ISystemRequirement, DiagramContent } from '../models/systemRequirement';
+import { getSystemRequirementById, updateSystemRequirementById } from '@/app/api/utils/systemRequirement';
+import { generateResponseAI } from '@/app/api/utils/openAI';
 
-// Configuramos la API de OpenAI
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 /**
  * Servicio para manejar la generación de diagramas utilizando OpenAI
@@ -24,10 +21,7 @@ export class DiagramService {
   ): Promise<ISystemRequirement | null> {
     try {
       // 1. Encontrar el requisito por ID y verificar pertenencia al usuario
-      const requirement = await SystemRequirement.findOne({
-        _id: requirementId,
-        userId: userId,
-      });
+      const requirement = await getSystemRequirementById(requirementId, userId);
 
       if (!requirement) {
         throw new Error('Requisito no encontrado o no autorizado');
@@ -35,39 +29,31 @@ export class DiagramService {
 
       // 2. Actualizar el estado a "generating"
       requirement.status = 'generating';
-      await requirement.save();
+      await updateSystemRequirementById(requirementId, requirement);
 
       try {
         // 3. Generar el prompt para OpenAI basado en los requisitos
         const prompt = this.buildPrompt(requirement);
 
-        // 4. Llamar a la API de OpenAI
-        const completion = await openai.chat.completions.create({
-          messages: [
-            { role: "system", content: "Eres un experto en arquitectura de software que crea diagramas claros y detallados basados en requisitos del sistema." },
-            { role: "user", content: prompt }
-          ],
-          model: "gpt-4",
-        });
-
-        // 5. Procesar la respuesta
-        const response = completion.choices[0].message.content || '';
+        // 4. Generar la respuesta con OpenAI
+        const response = await generateResponseAI(prompt);
         
-        // 6. Extraer diferentes diagramas de la respuesta
+        
+        // 5. Extraer diferentes diagramas de la respuesta
         const { diagramUrls, diagrams } = await this.processResponse(response, requirementId);
         
-        // 7. Actualizar el requisito con los diagramas, contenido completo y estado
+        // 6. Actualizar el requisito con los diagramas, contenido completo y estado
         requirement.diagramUrls = diagramUrls;
         requirement.diagrams = diagrams;
         requirement.designDocument = response; // Guardar el documento completo
         requirement.status = 'completed';
-        await requirement.save();
+        
 
-        return requirement;
+        return await updateSystemRequirementById(requirementId, requirement);
       } catch (error) {
         // Si hay un error en la generación, actualizar el estado a "failed"
         requirement.status = 'failed';
-        await requirement.save();
+        await updateSystemRequirementById(requirementId, requirement);
         throw error;
       }
     } catch (error) {
@@ -90,19 +76,19 @@ DESCRIPCIÓN: ${requirement.description}
 TIPO DE APLICACIÓN: ${requirement.applicationType}
 
 REQUISITOS FUNCIONALES:
-${requirement.functionalRequirements.map((req, index) => `${index + 1}. ${req}`).join('\n')}
+${requirement.functionalRequirements?.map((req, index) => `${index + 1}. ${req}`).join('\n')}
 
 REQUISITOS NO FUNCIONALES:
-- Escalabilidad: ${requirement.nonFunctionalRequirements.scalability}
-- Disponibilidad: ${requirement.nonFunctionalRequirements.availability}
-- Seguridad: ${requirement.nonFunctionalRequirements.security}
-- Rendimiento: ${requirement.nonFunctionalRequirements.performance}
+- Escalabilidad: ${requirement.nonFunctionalRequirements?.scalability}
+- Disponibilidad: ${requirement.nonFunctionalRequirements?.availability}
+- Seguridad: ${requirement.nonFunctionalRequirements?.security}
+- Rendimiento: ${requirement.nonFunctionalRequirements?.performance}
 
 PREFERENCIAS TECNOLÓGICAS:
-- Lenguaje Backend: ${requirement.techPreferences.backendLanguage}
-- Frameworks: ${requirement.techPreferences.frameworks.join(', ')}
-- Bases de datos: ${requirement.techPreferences.databases.join(', ')}
-- Arquitectura: ${requirement.techPreferences.architecture}
+- Lenguaje Backend: ${requirement.techPreferences?.backendLanguage}
+- Frameworks: ${requirement.techPreferences?.frameworks?.join(', ')}
+- Bases de datos: ${requirement.techPreferences?.databases?.join(', ')}
+- Arquitectura: ${requirement.techPreferences?.architecture}
 
 CONTEXTO ADICIONAL: ${requirement.additionalContext}
 

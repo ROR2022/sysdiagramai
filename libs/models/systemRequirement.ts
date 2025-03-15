@@ -1,7 +1,7 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { FormData } from "@/app/dashboard/create/components/types";
 
-// Interfaz para el contenido de los diagramas
+// Interface para el contenido de los diagramas
 export interface DiagramContent {
   title: string;          // Título del diagrama
   description: string;    // Descripción breve
@@ -11,32 +11,33 @@ export interface DiagramContent {
 }
 
 // Interface que extiende Document de Mongoose
-export interface ISystemRequirement extends Document {
-  _id: string;
-  userId: string;
-  created: Date;
-  updated: Date;
-  status: "draft" | "completed" | "generating" | "failed";
-  name: string;
-  description: string;
-  applicationType: string;
-  functionalRequirements: string[];
-  nonFunctionalRequirements: {
-    scalability: string;
-    availability: string;
-    security: string;
-    performance: string;
+export interface ISystemRequirement {
+  _id?: string;
+  userId?: string;
+  created?: Date;
+  updated?: Date;
+  status?: "draft" | "completed" | "generating" | "failed";
+  name?: string;
+  description?: string;
+  applicationType?: string;
+  functionalRequirements?: string[];
+  nonFunctionalRequirements?: {
+    scalability?: string;
+    availability?: string;
+    security?: string;
+    performance?: string;
   };
-  techPreferences: {
-    backendLanguage: string;
-    frameworks: string[];
-    databases: string[];
-    architecture: string;
+  techPreferences?: {
+    backendLanguage?: string;
+    frameworks?: string[];
+    databases?: string[];
+    architecture?: string;
   };
-  additionalContext: string;
+  additionalContext?: string;
   diagramUrls?: string[];
   diagrams?: DiagramContent[];    // Nuevo campo para almacenar contenido completo de diagramas
   designDocument?: string;        // Documento completo de diseño
+  diagramUrl?: string;
 }
 
 // Schema de Mongoose
