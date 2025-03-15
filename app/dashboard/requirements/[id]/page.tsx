@@ -54,8 +54,8 @@ export default async function RequirementPage({ params }: PageProps) {
         
         {/* Panel intermedio: Generador de diagramas */}
         <DiagramGenerator 
-          requirementId={requirement._id.toString()} 
-          status={requirement.status} 
+          requirementId={requirement._id?.toString() || ''} 
+          status={requirement.status || ''} 
           hasDiagrams={Array.isArray(requirement.diagramUrls) && requirement.diagramUrls.length > 0} 
         />
         
@@ -64,7 +64,7 @@ export default async function RequirementPage({ params }: PageProps) {
           <DiagramViewer 
             diagramUrls={requirement.diagramUrls} 
             diagrams={requirement.diagrams} 
-            requirementId={requirement._id.toString()}
+            requirementId={requirement._id?.toString() || ''}
           />
         )}
       </div>
