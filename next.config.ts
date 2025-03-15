@@ -1,5 +1,5 @@
 import { NextConfig } from 'next';
-
+//import path from 'path';
 const config: NextConfig = {
   // Especificar paquetes que deben ser ejecutados en Node.js
   serverExternalPackages: ['mongodb', 'mongoose'],
@@ -15,15 +15,7 @@ const config: NextConfig = {
     ],
   },
 
-  // Configuración experimental para Turbopack (actualizada)
-  experimental: {
-    turbo: {
-      rules: {
-        // Configuración para el procesamiento de CSS (nuevo formato con glob)
-        '*.css': ['postcss-loader'],
-      },
-    },
-  },
+ 
   
   // Configuración para servir archivos estáticos desde la carpeta uploads
   async rewrites() {
