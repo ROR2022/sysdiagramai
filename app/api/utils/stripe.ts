@@ -81,8 +81,10 @@ export async function createCheckoutSession({
 }) {
   // Obtener o crear el cliente
   const customer = await getOrCreateCustomer(email, userId);
+  /*
+  
 
-  return stripe.checkout.sessions.create({
+    stripe.checkout.sessions.create({
     mode: 'subscription',
     payment_method_types: ['card'],
     customer: customer.id,
@@ -105,11 +107,36 @@ export async function createCheckoutSession({
       userId,
     },
   });
+  */
+
+  return stripe.checkout.sessions.create({
+    customer: customer.id,
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    mode: "subscription",
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription?success=true`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription?canceled=true`,
+    metadata: {
+      userId,
+    },
+  });
 }
 
 // Función para cancelar una suscripción
 export async function cancelSubscription(subscriptionId: string) {
   return stripe.subscriptions.cancel(subscriptionId);
+}
+
+// funcion para cancelar una suscripcion al finalizar el periodo
+export async function cancelSubscriptionAtPeriodEnd(subscriptionId: string) {
+  return stripe.subscriptions.update(subscriptionId, {
+    cancel_at_period_end: true,
+  });
 }
 
 // Función para obtener una suscripción
@@ -121,6 +148,31 @@ export async function getSubscription(subscriptionId: string) {
 export async function createBillingPortalSession(customerId: string) {
   return stripe.billingPortal.sessions.create({
     customer: customerId,
-    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription`,
   });
 } 
+
+// crear un cliente en Stripe directamente debe de ser envuelto en un try catch
+export async function createCustomerByUserId(userId: string) {
+  try {
+    return await stripe.customers.create({ metadata: { userId } });
+  } catch (error) {
+    console.error('Error creating Stripe customer:', error);
+    throw error;
+  }
+}
+
+export async function createCustomerByUserIdAndEmail(userId: string, email: string) {
+  try {
+    return await stripe.customers.create({ metadata: { userId }, email });
+  } catch (error) {
+    console.error('Error creating Stripe customer:', error);
+    throw error;
+  }
+}
+
+// funcion para recuperar una suscripcion por el id de la suscripcion
+export async function getStripeSubscriptionById(subscriptionId: string) {
+  return stripe.subscriptions.retrieve(subscriptionId) as unknown as Stripe.Subscription;
+}
+

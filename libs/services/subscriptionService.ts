@@ -1,11 +1,21 @@
 import { ISubscription } from "../models/subscription";
 import Stripe from "stripe";
 //import clientPromise from "../mongo";
-import { createSubscription, getSubscriptionByUserId, updateSubscriptionByUserId, getSubscriptionByStripeCustomerId } from "@/app/api/utils/subscription";
+import {
+  createSubscription,
+  getSubscriptionByUserId,
+  updateSubscriptionByUserId,
+  getSubscriptionByStripeCustomerId,
+} from "@/app/api/utils/subscription";
 import { getUserById } from "@/app/api/utils/users";
-
-// Inicializar Stripe con la versión más reciente disponible
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+import {
+  createCustomerByUserId,
+  createCustomerByUserIdAndEmail,
+  createCheckoutSession,
+  createBillingPortalSession,
+  cancelSubscriptionAtPeriodEnd,
+  getStripeSubscriptionById,
+} from "@/app/api/utils/stripe";
 
 // Servicio para manejar las operaciones con las suscripciones
 export const SubscriptionService = {
@@ -15,7 +25,6 @@ export const SubscriptionService = {
    * @returns La suscripción si existe
    */
   async getByUserId(userId: string): Promise<ISubscription | null> {
-    
     const subscription = await getSubscriptionByUserId(userId);
     return subscription as ISubscription | null;
   },
@@ -26,25 +35,28 @@ export const SubscriptionService = {
    * @param stripeCustomerId ID del cliente en Stripe (opcional)
    * @returns La suscripción creada
    */
-  async createFreeSubscription(userId: string, stripeCustomerId?: string): Promise<ISubscription> {
-    
+  async createFreeSubscription(
+    userId: string,
+    stripeCustomerId?: string
+  ): Promise<ISubscription> {
     // Si no se proporciona un ID de cliente, crear uno nuevo en Stripe
-    if (!stripeCustomerId || stripeCustomerId.startsWith('temp_')) {
+    if (!stripeCustomerId || stripeCustomerId.startsWith("temp_")) {
       try {
         // Intentar crear un cliente en Stripe directamente
-        const customer = await stripe.customers.create({
-          metadata: { userId }
-        });
-        
+        // esta funcion es exportada desde el archivo stripe.ts
+        const customer = await createCustomerByUserId(userId);
+
         stripeCustomerId = customer.id;
-        console.log(`Created Stripe customer for user ${userId}: ${stripeCustomerId}`);
+        console.log(
+          `Created Stripe customer for user ${userId}: ${stripeCustomerId}`
+        );
       } catch (error) {
-        console.error('Error creating Stripe customer:', error);
+        console.error("Error creating Stripe customer:", error);
         // Si falla, usar un ID temporal
         stripeCustomerId = `temp_${userId}`;
       }
     }
-    
+
     const subscription: ISubscription = {
       userId,
       stripeCustomerId,
@@ -53,15 +65,14 @@ export const SubscriptionService = {
       diagramsUsed: 0,
       diagramsLimit: 3,
     };
-    
+
     // Convertir a formato compatible con MongoDB
     const subscriptionDoc = {
       ...subscription,
       created: new Date(),
-      updated: new Date()
+      updated: new Date(),
     };
-    
-    
+
     return await createSubscription(subscriptionDoc as ISubscription);
   },
 
@@ -71,12 +82,14 @@ export const SubscriptionService = {
    * @param data Datos a actualizar
    * @returns La suscripción actualizada
    */
-  async updateSubscription(userId: string, data: Partial<ISubscription>): Promise<ISubscription | null> {
-    
+  async updateSubscription(
+    userId: string,
+    data: Partial<ISubscription>
+  ): Promise<ISubscription | null> {
     const dataToUpdate = { ...data, updated: new Date() } as ISubscription;
 
     const result = await updateSubscriptionByUserId(userId, dataToUpdate);
-    
+
     return result as unknown as ISubscription | null;
   },
 
@@ -86,17 +99,22 @@ export const SubscriptionService = {
    * @returns La suscripción actualizada
    */
   async incrementDiagramsUsed(userId: string): Promise<ISubscription | null> {
-    
     /* const result = await db.collection("subscriptions").findOneAndUpdate(
       { userId },
       { $inc: { diagramsUsed: 1 }, $set: { updated: new Date() } },
       { returnDocument: "after" }
     ); */
 
-    const subscription = await getSubscriptionByUserId(userId) as ISubscription;
+    const subscription = (await getSubscriptionByUserId(
+      userId
+    )) as ISubscription;
     if (!subscription) return null;
 
-    const updatedSubscription = { ...subscription, diagramsUsed: subscription.diagramsUsed + 1, updated: new Date() } as unknown as ISubscription;
+    const updatedSubscription = {
+      ...subscription,
+      diagramsUsed: subscription.diagramsUsed + 1,
+      updated: new Date(),
+    } as unknown as ISubscription;
 
     return await updateSubscriptionByUserId(userId, updatedSubscription);
   },
@@ -108,9 +126,9 @@ export const SubscriptionService = {
    */
   async canCreateDiagram(userId: string): Promise<boolean> {
     const subscription = await this.getByUserId(userId);
-    
+
     if (!subscription) return false;
-    
+
     return subscription.diagramsUsed < subscription.diagramsLimit;
   },
 
@@ -120,50 +138,63 @@ export const SubscriptionService = {
    * @param priceId ID del precio en Stripe
    * @returns URL de la sesión de checkout
    */
-  async createCheckoutSession(userId: string, priceId: string): Promise<string> {
+  async createCheckoutSession(
+    userId: string,
+    priceId: string
+  ): Promise<string> {
     const subscription = await this.getByUserId(userId);
-    
+
     if (!subscription) {
       throw new Error("Subscription not found");
     }
-    
+
     let customerId = subscription.stripeCustomerId;
-    
+    let user = null;
+
     // Verificar si el ID de cliente es válido (no debe ser un email o ID temporal)
-    if (!customerId || 
-        customerId.includes('@') || 
-        customerId.startsWith('temp_')) {
-      
+    if (
+      !customerId ||
+      customerId.includes("@") ||
+      customerId.startsWith("temp_")
+    ) {
       try {
         // Obtener el usuario para conseguir su email
-        const user = await getUserById(userId);
-        
+        user = await getUserById(userId);
+
         if (!user || !user.email) {
           throw new Error("User email not found");
         }
-        
+
         // Crear un nuevo cliente en Stripe
-        const customer = await stripe.customers.create({
-          email: user.email,
-          metadata: { userId }
-        });
-        
+        const customer = await createCustomerByUserIdAndEmail(
+          userId,
+          user.email
+        );
+
         customerId = customer.id;
-        
+
         // Actualizar la suscripción con el nuevo ID de cliente
         await this.updateSubscription(userId, {
-          stripeCustomerId: customerId
+          stripeCustomerId: customerId,
         });
-        
-        console.log(`Created new Stripe customer for user ${userId}: ${customerId}`);
+
+        console.log(
+          `Created new Stripe customer for user ${userId}: ${customerId}`
+        );
       } catch (error) {
-        console.error('Error creating Stripe customer:', error);
+        console.error("Error creating Stripe customer:", error);
         throw new Error("Failed to create Stripe customer");
       }
     }
-    
+
     // Crear la sesión de checkout con el ID de cliente válido
-    const session = await stripe.checkout.sessions.create({
+    // esta funcion es exportada desde el archivo stripe.ts
+    const session = await createCheckoutSession({
+      priceId,
+      userId,
+      email: user?.email || "",
+    });
+    /* const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
       line_items: [
@@ -178,8 +209,8 @@ export const SubscriptionService = {
       metadata: {
         userId,
       },
-    });
-    
+    }); */
+
     return session.url as string;
   },
 
@@ -190,16 +221,15 @@ export const SubscriptionService = {
    */
   async createBillingPortalSession(userId: string): Promise<string> {
     const subscription = await this.getByUserId(userId);
-    
+
     if (!subscription) {
       throw new Error("Subscription not found");
     }
-    
-    const session = await stripe.billingPortal.sessions.create({
-      customer: subscription.stripeCustomerId,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription`,
-    });
-    
+
+    const session = await createBillingPortalSession(
+      subscription.stripeCustomerId
+    );
+
     return session.url;
   },
 
@@ -210,20 +240,18 @@ export const SubscriptionService = {
    */
   async cancelSubscription(userId: string): Promise<boolean> {
     const subscription = await this.getByUserId(userId);
-    
+
     if (!subscription || !subscription.stripeSubscriptionId) {
       return false;
     }
-    
+
     try {
-      await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-        cancel_at_period_end: true,
-      });
-      
+      await cancelSubscriptionAtPeriodEnd(subscription.stripeSubscriptionId);
+
       await this.updateSubscription(userId, {
         status: "canceled",
       });
-      
+
       return true;
     } catch (error) {
       console.error("Error canceling subscription:", error);
@@ -239,86 +267,113 @@ export const SubscriptionService = {
   async handleStripeEvent(event: Stripe.Event): Promise<ISubscription | null> {
     let subscription: ISubscription | null = null;
     let userId: string | undefined;
-    
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         userId = session.metadata?.userId;
-        
+
         if (!userId) {
           console.error("No userId found in session metadata");
           return null;
         }
-        
-        const stripeSubscription = await stripe.subscriptions.retrieve(
+
+        const stripeSubscription = await getStripeSubscriptionById(
           session.subscription as string
         );
-        
-        const plan = this.getPlanFromProductId(stripeSubscription.items.data[0].price.product as string);
+
+        const plan = this.getPlanFromProductId(
+          stripeSubscription.items.data[0].price.product as string
+        );
         const limit = this.getLimitFromPlan(plan);
-        
+
         subscription = await this.updateSubscription(userId, {
           stripeSubscriptionId: stripeSubscription.id,
           plan,
-          status: stripeSubscription.status as "active" | "trialing" | "canceled" | "past_due" | "incomplete",
-          currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+          status: stripeSubscription.status as
+            | "active"
+            | "trialing"
+            | "canceled"
+            | "past_due"
+            | "incomplete",
+          currentPeriodEnd: new Date(
+            stripeSubscription.current_period_end * 1000
+          ),
           diagramsLimit: limit,
         });
-        
+
         break;
       }
-      
+
       case "customer.subscription.updated": {
         const stripeSubscription = event.data.object as Stripe.Subscription;
         const stripeCustomerId = stripeSubscription.customer as string;
-        
-        
-        const existingSubscription = await getSubscriptionByStripeCustomerId(stripeCustomerId);
-        
+
+        const existingSubscription = await getSubscriptionByStripeCustomerId(
+          stripeCustomerId
+        );
+
         if (!existingSubscription) {
-          console.error("No subscription found for customer:", stripeCustomerId);
+          console.error(
+            "No subscription found for customer:",
+            stripeCustomerId
+          );
           return null;
         }
-        
+
         userId = existingSubscription.userId;
-        
-        const plan = this.getPlanFromProductId(stripeSubscription.items.data[0].price.product as string);
+
+        const plan = this.getPlanFromProductId(
+          stripeSubscription.items.data[0].price.product as string
+        );
         const limit = this.getLimitFromPlan(plan);
-        
+
         subscription = await this.updateSubscription(userId as string, {
           plan,
-          status: stripeSubscription.status as "active" | "trialing" | "canceled" | "past_due" | "incomplete",
-          currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+          status: stripeSubscription.status as
+            | "active"
+            | "trialing"
+            | "canceled"
+            | "past_due"
+            | "incomplete",
+          currentPeriodEnd: new Date(
+            stripeSubscription.current_period_end * 1000
+          ),
           diagramsLimit: limit,
         });
-        
+
         break;
       }
-      
+
       case "customer.subscription.deleted": {
         const stripeSubscription = event.data.object as Stripe.Subscription;
         const stripeCustomerId = stripeSubscription.customer as string;
-        
-        const existingSubscription = await getSubscriptionByStripeCustomerId(stripeCustomerId);
-        
+
+        const existingSubscription = await getSubscriptionByStripeCustomerId(
+          stripeCustomerId
+        );
+
         if (!existingSubscription) {
-          console.error("No subscription found for customer:", stripeCustomerId);
+          console.error(
+            "No subscription found for customer:",
+            stripeCustomerId
+          );
           return null;
         }
-        
+
         userId = existingSubscription.userId;
-        
+
         subscription = await this.updateSubscription(userId as string, {
           plan: "free",
           status: "canceled",
           stripeSubscriptionId: undefined,
           diagramsLimit: 5,
         });
-        
+
         break;
       }
     }
-    
+
     return subscription;
   },
 
@@ -327,14 +382,14 @@ export const SubscriptionService = {
    * @param productId ID del producto en Stripe
    * @returns El plan correspondiente
    */
-  getPlanFromProductId(productId: string): 'free' | 'pro' | 'team' {
-    const productMap: Record<string, 'free' | 'pro' | 'team'> = {
-      [process.env.STRIPE_PRODUCT_FREE as string]: 'free',
-      [process.env.STRIPE_PRODUCT_PRO as string]: 'pro',
-      [process.env.STRIPE_PRODUCT_TEAM as string]: 'team',
+  getPlanFromProductId(productId: string): "free" | "pro" | "team" {
+    const productMap: Record<string, "free" | "pro" | "team"> = {
+      [process.env.STRIPE_PRODUCT_FREE as string]: "free",
+      [process.env.STRIPE_PRODUCT_PRO as string]: "pro",
+      [process.env.STRIPE_PRODUCT_TEAM as string]: "team",
     };
-    
-    return productMap[productId] || 'free';
+
+    return productMap[productId] || "free";
   },
 
   /**
@@ -342,13 +397,13 @@ export const SubscriptionService = {
    * @param plan Plan de suscripción
    * @returns El límite de diagramas
    */
-  getLimitFromPlan(plan: 'free' | 'pro' | 'team'): number {
+  getLimitFromPlan(plan: "free" | "pro" | "team"): number {
     const limitMap: Record<string, number> = {
       free: 3,
       pro: 50,
       team: 1000, // Prácticamente ilimitado
     };
-    
+
     return limitMap[plan];
   },
-}; 
+};
