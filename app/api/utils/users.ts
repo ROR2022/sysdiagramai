@@ -5,7 +5,7 @@
 */
 
 import clientPromise from '@/libs/mongo';
-
+import { ObjectId } from 'mongodb';
 export async function getUserByEmail(email: string) {
     try {
         const client = await clientPromise;
@@ -22,7 +22,7 @@ export async function getUserById(id: string) {
     try {
         const client = await clientPromise;
         const db = client.db();
-        const user = await db.collection('users').findOne({ id });
+        const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
         return user;
     } catch (error) {
         console.error('Error al obtener el usuario por id:', error);

@@ -17,6 +17,7 @@
     "browserify-zlib": "^0.2.0",
     "crypto-browserify": "^3.12.1",
     "css-loader": "^7.1.2",
+    "date-fns": "^4.1.0",
     "mongodb": "^6.13.1",
     "mongoose": "^8.10.1",
     "mysterybox": "file:",

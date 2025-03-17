@@ -253,7 +253,7 @@ export default function SignIn() {
             <button
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="btn btn-outline hover:bg-base-200 dark:hover:bg-base-700 w-full flex items-center justify-center gap-2 transition-all duration-300 shadow-sm hover:shadow"
+              className="btn btn-outline text-base-content hover:bg-base-200 hover:text-secondary dark:hover:bg-base-700 w-full flex items-center justify-center gap-2 transition-all duration-300 shadow-sm hover:shadow"
             >
               {loading ? (
                 <span className="flex items-center">

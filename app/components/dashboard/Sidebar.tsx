@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import SubscriptionNav from "../subscription/SubscriptionNav";
 
 // Definimos los elementos de navegación
 const navigationItems = [
@@ -69,6 +71,26 @@ const navigationItems = [
     ),
   },
   {
+    name: "Suscripción",
+    href: "/subscription",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    ),
+  },
+  {
     name: "Mi Perfil",
     href: "/dashboard/profile",
     icon: (
@@ -98,6 +120,32 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [subscription, setSubscription] = useState<{
+    plan: string;
+    diagramsUsed: number;
+    diagramsLimit: number;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Obtener la información de la suscripción
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const response = await fetch('/api/subscription');
+        
+        if (response.ok) {
+          const data = await response.json();
+          setSubscription(data);
+        }
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchSubscription();
+  }, []);
 
   return (
     <>
@@ -139,7 +187,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           </div>
 
           {/* Perfil de usuario */}
-          <div className={`mt-auto p-4 ${isOpen ? "" : "hidden md:block"}`}>
+          <div className={`p-4 ${isOpen ? "" : "hidden md:block"}`}>
             <div className="flex items-center gap-3">
               <div className="avatar">
                 {session?.user?.image ? (
@@ -170,6 +218,17 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
               </div>
             </div>
           </div>
+
+          {/* Información de suscripción */}
+          {!loading && subscription && isOpen && (
+            <div className="px-4 pb-2">
+              <SubscriptionNav 
+                currentPlan={subscription.plan}
+                diagramsUsed={subscription.diagramsUsed}
+                diagramsLimit={subscription.diagramsLimit}
+              />
+            </div>
+          )}
 
           {/* Navegación */}
           <nav className="flex-1 overflow-y-auto p-4">
@@ -202,6 +261,30 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
 
           {/* Footer del sidebar */}
           <div className="p-4 border-t border-base-200">
+            {/* Botón de actualización para usuarios con plan gratuito */}
+            {!loading && subscription && subscription.plan === 'free' && isOpen && (
+              <Link 
+                href="/subscription"
+                className="flex items-center w-full p-3 mb-2 rounded-lg text-primary hover:bg-base-200 transition-colors"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="w-5 h-5 mr-3"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>Actualizar Plan</span>
+              </Link>
+            )}
+            
             <button
               onClick={async () => {
                 try {

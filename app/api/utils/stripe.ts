@@ -9,18 +9,48 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   typescript: true,
 });
 
-// Función para obtener los precios de los planes
+/**
+ * Obtiene los planes de suscripción disponibles
+ * @returns Lista de planes de suscripción
+ */
 export async function getSubscriptionPlans() {
-  const prices = await stripe.prices.list({
-    active: true,
-    type: 'recurring',
-    expand: ['data.product'],
-  });
+  try {
+    // Obtener los productos activos
+    const products = await stripe.products.list({
+      active: true,
+      expand: ['data.default_price'],
+    });
 
-  return prices.data.sort((a, b) => {
-    if (!a.unit_amount || !b.unit_amount) return 0;
-    return a.unit_amount - b.unit_amount;
-  });
+    const { data: productsData } = products;
+    //console.log('1.- data products from stripe:..', productsData);
+    
+
+    // Filtrar y transformar los productos
+    const plans = productsData
+      .map(product => {
+        const price = product.default_price as Stripe.Price;
+        //console.log('marketing_features:..', product.marketing_features);
+        
+        return {
+          id: price.id,
+          name: String(product.name).toLowerCase(),
+          description: product.description || '',
+          price: price.unit_amount || 0,
+          currency: price.currency,
+          interval: price.recurring?.interval || 'month',
+          intervalCount: price.recurring?.interval_count || 1,
+          features: product.marketing_features?.map((feature) => feature.name) || [],
+          highlighted: product.metadata.highlighted === 'true',
+        };
+      })
+      .sort((a, b) => a.price - b.price); // Ordenar por precio
+
+    //console.log(' 2.- data plans from stripe:..', plans);
+    return plans;
+  } catch (error) {
+    console.error('Error fetching subscription plans:', error);
+    return [];
+  }
 }
 
 // Función para crear o recuperar un cliente de Stripe
