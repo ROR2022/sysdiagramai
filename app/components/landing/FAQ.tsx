@@ -42,42 +42,42 @@ export default function FAQ() {
   };
 
   return (
-    <section id="faq" className="py-16 bg-base-100 relative">
-      {/* Elementos decorativos sutiles */}
-      <div className="absolute inset-0 overflow-hidden opacity-5 dark:opacity-10">
+    <section id="faq" className="py-8 md:py-16 bg-base-100 relative">
+      {/* Elementos decorativos - Ocultos en móvil para mejor rendimiento */}
+      <div className="absolute inset-0 overflow-hidden opacity-5 dark:opacity-10 hidden md:block">
         <div className="absolute -right-40 top-20 w-80 h-80 rounded-full bg-primary/30 blur-3xl"></div>
         <div className="absolute -left-40 bottom-20 w-80 h-80 rounded-full bg-secondary/30 blur-3xl"></div>
       </div>
       
       <div className="container mx-auto px-4 md:px-8 relative z-10">
-        <div className="text-center mb-12">
-          <div className="inline-block bg-primary/10 dark:bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-medium mb-4 shadow-sm">
+        <div className="text-center mb-6 md:mb-12">
+          <div className="inline-block bg-primary/10 dark:bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-medium mb-2 md:mb-4 shadow-sm">
             Preguntas frecuentes
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4 text-base-content">Dudas comunes</h2>
-          <p className="text-lg text-base-content/80 max-w-2xl mx-auto">
-            Encuentra respuestas a las preguntas más frecuentes sobre SysDiagramAI y cómo puede ayudarte a diseñar sistemas de forma eficiente.
+          <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4 text-base-content">Dudas comunes</h2>
+          <p className="text-base md:text-lg text-base-content/80 max-w-2xl mx-auto">
+            Encuentra respuestas a las preguntas más frecuentes sobre SysDiagramAI.
           </p>
         </div>
         
-        <div className="max-w-3xl mx-auto divide-y divide-base-300 bg-base-100/50 backdrop-blur-sm shadow-lg rounded-xl p-6 dark:bg-base-200/30">
+        <div className="max-w-3xl mx-auto divide-y divide-base-300 bg-base-100/50 backdrop-blur-sm shadow-md md:shadow-lg rounded-lg md:rounded-xl p-4 md:p-6 dark:bg-base-200/30">
           {faqs.map((faq, index) => (
-            <div key={index} className={`py-5 ${index === 0 ? '' : 'border-t border-base-300'}`}>
+            <div key={index} className={`py-3 md:py-5 ${index === 0 ? '' : 'border-t border-base-300'}`}>
               <button
                 onClick={() => toggleFaq(index)}
                 className="flex justify-between items-center w-full text-left group"
                 aria-expanded={activeIndex === index}
                 aria-controls={`faq-answer-${index}`}
               >
-                <h3 className="text-lg font-medium text-base-content group-hover:text-primary transition-colors">
+                <h3 className="text-base md:text-lg font-medium text-base-content group-hover:text-primary transition-colors pr-2">
                   {faq.question}
                 </h3>
                 <span 
-                  className={`transition-all duration-300 text-base-content/70 group-hover:text-primary ${
+                  className={`flex-shrink-0 transition-all duration-300 text-base-content/70 group-hover:text-primary ${
                     activeIndex === index ? 'rotate-180 text-primary' : ''
                   }`}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 011.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
                 </span>
@@ -85,9 +85,9 @@ export default function FAQ() {
               
               <div 
                 id={`faq-answer-${index}`}
-                className={`mt-3 text-base-content/80 overflow-hidden transition-all duration-300 ${
+                className={`mt-2 md:mt-3 text-sm md:text-base text-base-content/80 overflow-hidden transition-all duration-300 ${
                   activeIndex === index 
-                    ? 'max-h-96 opacity-100' 
+                    ? 'max-h-[500px] opacity-100' 
                     : 'max-h-0 opacity-0'
                 }`}
               >
@@ -100,9 +100,9 @@ export default function FAQ() {
           ))}
         </div>
         
-        <div className="text-center mt-10">
-          <p className="text-base-content/70 mb-3">¿No encuentras lo que buscas?</p>
-          <a href="#contact" className="btn btn-outline btn-primary btn-sm hover:bg-primary/10">
+        <div className="text-center mt-6 md:mt-10">
+          <p className="text-sm md:text-base text-base-content/70 mb-2 md:mb-3">¿No encuentras lo que buscas?</p>
+          <a href="#contact" className="btn btn-outline btn-primary btn-xs md:btn-sm hover:bg-primary/10">
             Contacta con nosotros
           </a>
         </div>

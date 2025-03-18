@@ -7,36 +7,45 @@ export default function Footer() {
   
   return (
     <footer className="bg-base-300 text-base-content">
-      <div className="container mx-auto px-4 md:px-8 py-10">
-        <div className="footer grid-cols-2 sm:grid-cols-4">
+      <div className="container mx-auto px-4 md:px-8 py-6 md:py-10">
+        {/* Versión móvil optimizada con mejor distribución */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-6 md:gap-8 md:footer">
           <div>
-            <span className="footer-title">Producto</span>
-            <Link href="#features" className="link link-hover">Características</Link>
-            <Link href="#pricing" className="link link-hover">Precios</Link>
-            <Link href="#faq" className="link link-hover">FAQ</Link>
+            <span className="text-base font-semibold md:footer-title mb-2 block">Producto</span>
+            <div className="flex flex-col gap-1 md:gap-2">
+              <Link href="#features" className="link link-hover text-sm md:text-base">Características</Link>
+              <Link href="#pricing" className="link link-hover text-sm md:text-base">Precios</Link>
+              <Link href="#faq" className="link link-hover text-sm md:text-base">FAQ</Link>
+            </div>
           </div>
           <div>
-            <span className="footer-title">Recursos</span>
-            <Link href="#" className="link link-hover">Documentación</Link>
-            <Link href="#" className="link link-hover">Blog</Link>
-            <Link href="#" className="link link-hover">Tutoriales</Link>
+            <span className="text-base font-semibold md:footer-title mb-2 block">Recursos</span>
+            <div className="flex flex-col gap-1 md:gap-2">
+              <Link href="#" className="link link-hover text-sm md:text-base">Documentación</Link>
+              <Link href="#" className="link link-hover text-sm md:text-base">Blog</Link>
+              <Link href="#" className="link link-hover text-sm md:text-base">Tutoriales</Link>
+            </div>
           </div>
           <div>
-            <span className="footer-title">Legal</span>
-            <Link href="#" className="link link-hover">Términos de uso</Link>
-            <Link href="#" className="link link-hover">Política de privacidad</Link>
-            <Link href="#" className="link link-hover">Cookies</Link>
+            <span className="text-base font-semibold md:footer-title mb-2 block">Legal</span>
+            <div className="flex flex-col gap-1 md:gap-2">
+              <Link href="#" className="link link-hover text-sm md:text-base">Términos de uso</Link>
+              <Link href="#" className="link link-hover text-sm md:text-base">Política de privacidad</Link>
+              <Link href="#" className="link link-hover text-sm md:text-base">Cookies</Link>
+            </div>
           </div>
           <div>
-            <span className="footer-title">Contacto</span>
-            <Link href="#" className="link link-hover">Soporte</Link>
-            <Link href="#" className="link link-hover">Ventas</Link>
-            <Link href="#" className="link link-hover">info@sysdiagramai.com</Link>
+            <span className="text-base font-semibold md:footer-title mb-2 block">Contacto</span>
+            <div className="flex flex-col gap-1 md:gap-2">
+              <Link href="#" className="link link-hover text-sm md:text-base">Soporte</Link>
+              <Link href="#" className="link link-hover text-sm md:text-base">Ventas</Link>
+              <Link href="#" className="link link-hover text-sm md:text-base break-all">info@sysdiagramai.com</Link>
+            </div>
           </div>
         </div>
       </div>
-      <div className="py-6 border-t border-base-content/10 text-center">
-        <p>© {currentYear} SysDiagramAI. Todos los derechos reservados.</p>
+      <div className="py-4 md:py-6 border-t border-base-content/10 text-center">
+        <p className="text-xs md:text-sm">© {currentYear} SysDiagramAI. Todos los derechos reservados.</p>
       </div>
     </footer>
   );
