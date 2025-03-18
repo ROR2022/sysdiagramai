@@ -18,7 +18,7 @@ export default function RequirementsFormSection() {
         </ul>
         
         <DocCard title="Ejemplo de Requerimiento Funcional">
-          <p className="italic">"Una aplicación de comercio electrónico que permita a los usuarios registrarse, navegar por catálogos de productos, añadir items al carrito, completar pagos y hacer seguimiento de pedidos. Los administradores deben poder gestionar inventario y ver estadísticas de ventas."</p>
+          <p className="italic">&quot;Una aplicación de comercio electrónico que permita a los usuarios registrarse, navegar por catálogos de productos, añadir items al carrito, completar pagos y hacer seguimiento de pedidos. Los administradores deben poder gestionar inventario y ver estadísticas de ventas.&quot;</p>
         </DocCard>
       </DocSubsection>
       
@@ -33,7 +33,7 @@ export default function RequirementsFormSection() {
         </ul>
         
         <DocCard title="Ejemplo de Requerimiento No Funcional">
-          <p className="italic">"El sistema debe soportar 100,000 usuarios concurrentes con un tiempo de respuesta menor a 200ms. Debe tener una disponibilidad del 99.9% y cumplir con los estándares PCI-DSS para manejo de pagos. Preferimos tecnologías basadas en la nube para facilitar el escalado."</p>
+          <p className="italic">&quot;El sistema debe soportar 100,000 usuarios concurrentes con un tiempo de respuesta menor a 200ms. Debe tener una disponibilidad del 99.9% y cumplir con los estándares PCI-DSS para manejo de pagos. Preferimos tecnologías basadas en la nube para facilitar el escalado.&quot;</p>
         </DocCard>
       </DocSubsection>
       
@@ -47,7 +47,7 @@ export default function RequirementsFormSection() {
         </ul>
         
         <DocAlert type="warning" title="Importante">
-          <p>Evita descripciones demasiado vagas como "una app escalable y rápida". Cuantifica tus necesidades siempre que sea posible.</p>
+          <p>Evita descripciones demasiado vagas como &quot;una app escalable y rápida&quot;. Cuantifica tus necesidades siempre que sea posible.</p>
         </DocAlert>
       </DocSubsection>
     </DocSection>
