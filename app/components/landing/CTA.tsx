@@ -16,7 +16,7 @@ export default function CTA() {
           <Link href="/auth/signin" className="btn btn-secondary btn-md md:btn-lg">
             Empezar Gratis
           </Link>
-          <Link href="#features" className="btn btn-outline btn-md md:btn-lg border-white text-white hover:bg-white hover:text-primary">
+          <Link href="/documentation" className="btn btn-outline btn-md md:btn-lg border-white text-white hover:bg-white hover:text-primary">
             Saber Más
           </Link>
         </div>

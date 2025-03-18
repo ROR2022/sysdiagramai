@@ -195,7 +195,7 @@ export default function Pricing() {
         
         <div className="text-center mt-6 md:mt-12">
           <p className="text-base-content/70 mb-2 md:mb-4 text-sm md:text-base">¿Tienes dudas sobre qué plan elegir?</p>
-          <Link href="#contact" className="btn btn-outline btn-xs md:btn-sm hover:bg-base-300/50">
+          <Link href="/sales" className="btn btn-outline btn-xs md:btn-sm hover:bg-base-300/50">
             Contacta con nosotros
           </Link>
         </div>

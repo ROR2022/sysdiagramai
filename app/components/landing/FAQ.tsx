@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 
 // Datos de las preguntas frecuentes
 const faqs = [
@@ -102,9 +103,9 @@ export default function FAQ() {
         
         <div className="text-center mt-6 md:mt-10">
           <p className="text-sm md:text-base text-base-content/70 mb-2 md:mb-3">¿No encuentras lo que buscas?</p>
-          <a href="#contact" className="btn btn-outline btn-primary btn-xs md:btn-sm hover:bg-primary/10">
+          <Link href="/support" className="btn btn-outline btn-primary btn-xs md:btn-sm hover:bg-primary/10">
             Contacta con nosotros
-          </a>
+          </Link>
         </div>
       </div>
     </section>
