@@ -179,7 +179,7 @@ export default function Navbar() {
 
               {/* Icono de la luna - modo oscuro */}
               <svg
-                className="swap-on fill-current w-5 h-5"
+                className="swap-on fill-current w-5 h-5 text-base-content"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
               >
