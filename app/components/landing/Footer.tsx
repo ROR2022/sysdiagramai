@@ -29,9 +29,9 @@ export default function Footer() {
           <div>
             <span className="text-base font-semibold md:footer-title mb-2 block">Legal</span>
             <div className="flex flex-col gap-1 md:gap-2">
-              <Link href="#" className="link link-hover text-sm md:text-base">Términos de uso</Link>
-              <Link href="#" className="link link-hover text-sm md:text-base">Política de privacidad</Link>
-              <Link href="#" className="link link-hover text-sm md:text-base">Cookies</Link>
+              <Link href="/legal/terms" className="link link-hover text-sm md:text-base">Términos de uso</Link>
+              <Link href="/legal/privacy" className="link link-hover text-sm md:text-base">Política de privacidad</Link>
+              <Link href="/legal/cookies" className="link link-hover text-sm md:text-base">Política de cookies</Link>
             </div>
           </div>
           <div>
@@ -39,13 +39,13 @@ export default function Footer() {
             <div className="flex flex-col gap-1 md:gap-2">
               <Link href="#" className="link link-hover text-sm md:text-base">Soporte</Link>
               <Link href="#" className="link link-hover text-sm md:text-base">Ventas</Link>
-              <Link href="#" className="link link-hover text-sm md:text-base break-all">info@sysdiagramai.com</Link>
+              <Link href="#" className="link link-hover text-sm md:text-base break-all">kodeandoando2023@gmail.com</Link>
             </div>
           </div>
         </div>
       </div>
       <div className="py-4 md:py-6 border-t border-base-content/10 text-center">
-        <p className="text-xs md:text-sm">© {currentYear} SysDiagramAI. Todos los derechos reservados.</p>
+        <p className="text-xs md:text-sm"> {currentYear} SysDiagramAI. Todos los derechos reservados.</p>
       </div>
     </footer>
   );

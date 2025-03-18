@@ -41,10 +41,6 @@ const plans = [
     description: 'Ideal para equipos y empresas',
     features: [
       '1000 Diagramas por mes',
-      'Hasta 5 miembros',
-      'Proyectos compartidos',
-      'Colaboración en tiempo real',
-      'Control de acceso',
       'Estadísticas de uso',
       'API personalizada',
       'Soporte dedicado',
