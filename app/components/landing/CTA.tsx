@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function CTA() {
   return (
-    <section className="py-10 md:py-20 bg-gradient-to-r from-primary to-primary-focus text-primary-content">
+    <section className="text-primary-content py-10 md:py-20 bg-gradient-to-r from-primary to-secondary">
       <div className="container mx-auto px-4 md:px-8 text-center">
         <h2 className="text-2xl md:text-3xl font-bold mb-3 md:mb-6">
           Transforma tus ideas en diagramas profesionales
