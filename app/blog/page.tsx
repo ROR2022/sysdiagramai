@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import BlogLayout from '../components/blog/BlogLayout';
 import BlogCard from '../components/blog/BlogCard';
 import BlogPagination from '../components/blog/BlogPagination';
@@ -89,15 +89,33 @@ const SAMPLE_BLOG_POSTS = [
 ];
 
 export default function BlogPage() {
-  const searchParams = useSearchParams();
+  const searchParams = useParams();
   const [filteredPosts, setFilteredPosts] = useState(SAMPLE_BLOG_POSTS);
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 4;
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   
   useEffect(() => {
     // Lógica para filtrar posts basado en parámetros de búsqueda
-    const search = searchParams.get('search');
-    const page = parseInt(searchParams.get('page') || '1');
+    
+    if (searchParams.search) {
+      if(typeof searchParams.search === 'string'){
+        setSearch(searchParams.search);
+      }else{
+        setSearch(searchParams.search.join(''));
+      }
+    }
+    
+    
+    if (searchParams.page) {
+       if(typeof searchParams.page === 'string'){
+        setPage(parseInt(searchParams.page));
+       }else{
+        setPage(parseInt(searchParams.page.join('')));
+       }
+    }
+     
     
     let filtered = [...SAMPLE_BLOG_POSTS];
     
@@ -120,11 +138,12 @@ export default function BlogPage() {
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
   
   // Construir URL base para paginación
-  const baseUrl = searchParams.get('search') 
-    ? `/blog?search=${searchParams.get('search')}` 
+  const baseUrl = search 
+    ? `/blog?search=${search}` 
     : '/blog';
   
   return (
+    <div className='bg-base-100'>
     <BlogLayout>
       {filteredPosts.length === 0 ? (
         <div className="text-center py-12">
@@ -150,5 +169,6 @@ export default function BlogPage() {
         </>
       )}
     </BlogLayout>
+    </div>
   );
 }

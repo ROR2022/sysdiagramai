@@ -1,12 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
+import { FC, Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import BlogLayout from '../../components/blog/BlogLayout';
 import BlogAuthor from '../../components/blog/BlogAuthor';
 import BlogCategory from '../../components/blog/BlogCategory';
+import BlogImage from '../../components/blog/BlogImage';
+
+
+//crearemos un componente para obtener los params de la url
+
+interface GetParamsProps {
+  setSlug: (slug: string) => void;
+}
+
+
+const GetParams:FC<GetParamsProps> = ({setSlug}) => {
+  
+  const params = useParams();
+  //const slug = params.slug || '';
+  let slug = '';
+  if(typeof params.slug === 'string') slug = params.slug;
+  if(typeof params.slug !== 'string' && params.slug) slug = params.slug.join('');
+  
+
+  useEffect(()=>{
+    if(slug) setSlug(slug);
+  },[slug, setSlug]);
+
+  return null;
+}
+
 
 // Tipos para los datos de blog
 interface BlogPost {
@@ -33,6 +58,8 @@ interface BlogPost {
   readTime: number;
   content: string;
 }
+
+
 
 // Datos de ejemplo para artículos del blog
 const SAMPLE_BLOG_POSTS: BlogPost[] = [
@@ -108,14 +135,18 @@ const SAMPLE_BLOG_POSTS: BlogPost[] = [
   // Otros posts de ejemplo...
 ];
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
+export default function BlogPostPage() {
+  // NOTA: En futuras versiones de Next.js, se deberá usar React.use() para acceder a params
+  // Por ahora, usamos acceso directo ya que Next.js lo soporta en transición
+  //const slug = params.slug;
+  const [slug, setSlug] = useState('');
   const router = useRouter();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     // En una implementación real, esto sería una llamada a una API o base de datos
-    const foundPost = SAMPLE_BLOG_POSTS.find(p => p.slug === params.slug);
+    const foundPost = SAMPLE_BLOG_POSTS.find(p => p.slug === slug);
     
     if (foundPost) {
       setPost(foundPost);
@@ -124,21 +155,27 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
       // Si no se encuentra el post, redirigir a la página principal del blog
       router.push('/blog');
     }
-  }, [params.slug, router]);
+  }, [slug, router]);
   
   if (loading) {
     return (
+      <div className='bg-base-100'>
       <BlogLayout>
         <div className="flex justify-center items-center py-16">
           <span className="loading loading-spinner loading-lg"></span>
         </div>
       </BlogLayout>
+      </div>
     );
   }
   
   if (!post) return null;
   
   return (
+    <div className='bg-base-100'>
+      <Suspense fallback={<div>Loading...</div>}>
+        <GetParams setSlug={setSlug} />
+      </Suspense>
     <BlogLayout activeCategory={post.category.id}>
       <article className="prose prose-lg max-w-none">
         {/* Encabezado del artículo */}
@@ -154,7 +191,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
           </div>
           
           <div className="relative h-96 w-full mb-8 rounded-lg overflow-hidden">
-            <Image
+            <BlogImage
               src={post.coverImage}
               alt={post.title}
               fill
@@ -237,5 +274,6 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
         </div>
       </article>
     </BlogLayout>
+    </div>
   );
 }

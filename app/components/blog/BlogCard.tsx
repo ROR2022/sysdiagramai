@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import BlogCategory from './BlogCategory';
+import BlogImage from './BlogImage';
 
 interface BlogCardProps {
   slug: string;
@@ -34,7 +34,7 @@ export default function BlogCard({
   return (
     <div className="card bg-base-100 shadow-md hover:shadow-lg transition-shadow overflow-hidden h-full">
       <figure className="relative h-48 w-full">
-        <Image
+        <BlogImage
           src={coverImage}
           alt={title}
           fill
@@ -57,8 +57,8 @@ export default function BlogCard({
         <div className="card-actions flex items-center mt-auto pt-3 border-t border-base-300">
           <div className="flex items-center">
             <div className="avatar mr-2">
-              <div className="w-8 h-8 rounded-full">
-                <Image
+              <div className="w-8 h-8 rounded-full overflow-hidden">
+                <BlogImage
                   src={author.avatar}
                   alt={author.name}
                   width={32}

@@ -81,7 +81,20 @@ export default function BlogLayout({ children, activeCategory }: BlogLayoutProps
   ];
   
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container text-base-content bg-base-100 mx-auto px-4 py-8">
+      {/* Botón para volver a la página principal */}
+      <div className="mb-6">
+        <Link 
+          href="/" 
+          className="btn btn-ghost gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Volver
+        </Link>
+      </div>
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Blog de SysDiagramAI</h1>
         <p className="text-base-content/70">

@@ -1,7 +1,7 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
+import BlogImage from './BlogImage';
 
 interface BlogAuthorProps {
   name: string;
@@ -25,8 +25,8 @@ export default function BlogAuthor({
   return (
     <div className="flex items-start gap-4 p-5 bg-base-200 rounded-lg">
       <div className="avatar">
-        <div className="w-16 h-16 rounded-full">
-          <Image
+        <div className="w-16 h-16 rounded-full overflow-hidden">
+          <BlogImage
             src={avatar}
             alt={name}
             width={64}
