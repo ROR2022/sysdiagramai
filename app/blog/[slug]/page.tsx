@@ -1,37 +1,13 @@
-'use client';
+"use client";
 
-import { FC, Suspense, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter, useParams } from 'next/navigation';
-import BlogLayout from '../../components/blog/BlogLayout';
-import BlogAuthor from '../../components/blog/BlogAuthor';
-import BlogCategory from '../../components/blog/BlogCategory';
-import BlogImage from '../../components/blog/BlogImage';
-
-
-//crearemos un componente para obtener los params de la url
-
-interface GetParamsProps {
-  setSlug: (slug: string) => void;
-}
-
-
-const GetParams:FC<GetParamsProps> = ({setSlug}) => {
-  
-  const params = useParams();
-  //const slug = params.slug || '';
-  let slug = '';
-  if(typeof params.slug === 'string') slug = params.slug;
-  if(typeof params.slug !== 'string' && params.slug) slug = params.slug.join('');
-  
-
-  useEffect(()=>{
-    if(slug) setSlug(slug);
-  },[slug, setSlug]);
-
-  return null;
-}
-
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useParams } from "next/navigation";
+import BlogLayout from "../../components/blog/BlogLayout";
+import BlogAuthor from "../../components/blog/BlogAuthor";
+import BlogCategory from "../../components/blog/BlogCategory";
+import BlogImage from "../../components/blog/BlogImage";
+//import { setTimeout } from "timers/promises";
 
 // Tipos para los datos de blog
 interface BlogPost {
@@ -59,27 +35,26 @@ interface BlogPost {
   content: string;
 }
 
-
-
 // Datos de ejemplo para artículos del blog
 const SAMPLE_BLOG_POSTS: BlogPost[] = [
   {
-    slug: 'introduccion-diagramas-sistemas',
-    title: 'Introducción a los Diagramas de Sistemas: Una Guía Completa',
-    excerpt: 'Aprende los fundamentos de los diagramas de sistemas y cómo pueden ayudarte a visualizar arquitecturas complejas de manera efectiva.',
-    coverImage: '/images/blog/system-diagrams-intro.jpg',
-    category: { id: 'tutorials', name: 'Tutoriales' },
-    author: { 
-      name: 'Ana Martínez', 
-      avatar: '/images/blog/authors/ana-martinez.jpg',
-      role: 'Ingeniera de Software Senior',
-      bio: 'Ana es especialista en arquitectura de sistemas distribuidos con más de 10 años de experiencia en el sector tecnológico.',
+    slug: "introduccion-diagramas-sistemas",
+    title: "Introducción a los Diagramas de Sistemas: Una Guía Completa",
+    excerpt:
+      "Aprende los fundamentos de los diagramas de sistemas y cómo pueden ayudarte a visualizar arquitecturas complejas de manera efectiva.",
+    coverImage: "/images/blog/system-diagrams-intro.jpg",
+    category: { id: "tutorials", name: "Tutoriales" },
+    author: {
+      name: "Ana Martínez",
+      avatar: "/images/blog/authors/ana-martinez.jpg",
+      role: "Ingeniera de Software Senior",
+      bio: "Ana es especialista en arquitectura de sistemas distribuidos con más de 10 años de experiencia en el sector tecnológico.",
       socialLinks: {
-        twitter: 'https://twitter.com/anamartinez',
-        linkedin: 'https://linkedin.com/in/anamartinez',
-      }
+        twitter: "https://twitter.com/anamartinez",
+        linkedin: "https://linkedin.com/in/anamartinez",
+      },
     },
-    publishDate: '15 Mar 2025',
+    publishDate: "15 Mar 2025",
     readTime: 8,
     content: `
       <h2>¿Qué son los diagramas de sistemas?</h2>
@@ -130,150 +105,258 @@ const SAMPLE_BLOG_POSTS: BlogPost[] = [
       <p>Los diagramas de sistemas son herramientas fundamentales en el diseño y desarrollo de software. Dominar el arte de crear diagramas efectivos puede mejorar significativamente la comunicación en tu equipo y la calidad de tus proyectos de software.</p>
       
       <p>En próximos artículos, profundizaremos en cada tipo de diagrama y exploraremos técnicas avanzadas para el diseño de sistemas.</p>
-    `
+    `,
   },
   // Otros posts de ejemplo...
 ];
 
 export default function BlogPostPage() {
-  // NOTA: En futuras versiones de Next.js, se deberá usar React.use() para acceder a params
-  // Por ahora, usamos acceso directo ya que Next.js lo soporta en transición
-  //const slug = params.slug;
-  const [slug, setSlug] = useState('');
+  const directParams = useParams();
+  console.log("directParams: ", directParams);
+  const slug = directParams.slug || "";
   const router = useRouter();
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
-  
+  const [noPost, setNoPost] = useState(false);
+
+  const goBlog = () => {
+    setTimeout(() => {
+      setNoPost(false);
+      router.push("/blog");
+    }, 5000);
+  };
+
   useEffect(() => {
     // En una implementación real, esto sería una llamada a una API o base de datos
-    const foundPost = SAMPLE_BLOG_POSTS.find(p => p.slug === slug);
-    
+    console.log("Buscando Slug:", slug);
+    const foundPost = SAMPLE_BLOG_POSTS.find((p) => p.slug === slug);
+
     if (foundPost) {
+      console.log("Post encontrado:", foundPost);
       setPost(foundPost);
       setLoading(false);
     } else {
+      console.log("No se encontró el post...");
       // Si no se encuentra el post, redirigir a la página principal del blog
-      router.push('/blog');
+      setLoading(false);
+      setNoPost(true);
+      goBlog();
     }
-  }, [slug, router]);
-  
+  }, [slug]);
+
   if (loading) {
     return (
-      <div className='bg-base-100'>
-      <BlogLayout>
-        <div className="flex justify-center items-center py-16">
-          <span className="loading loading-spinner loading-lg"></span>
-        </div>
-      </BlogLayout>
+      <div className="bg-base-100">
+        <BlogLayout>
+          <div className="flex justify-center items-center py-16">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        </BlogLayout>
       </div>
     );
   }
-  
-  if (!post) return null;
-  
+
+  //if (!post) return null;
+
   return (
-    <div className='bg-base-100'>
-      <Suspense fallback={<div>Loading...</div>}>
-        <GetParams setSlug={setSlug} />
-      </Suspense>
-    <BlogLayout activeCategory={post.category.id}>
-      <article className="prose prose-lg max-w-none">
-        {/* Encabezado del artículo */}
-        <header className="mb-8 not-prose">
-          <BlogCategory id={post.category.id} name={post.category.name} />
-          
-          <h1 className="text-3xl font-bold mt-3 mb-4">{post.title}</h1>
-          
-          <div className="flex items-center text-sm text-base-content/70 mb-6">
-            <span>{post.publishDate}</span>
-            <span className="mx-2">•</span>
-            <span>{post.readTime} min lectura</span>
-          </div>
-          
-          <div className="relative h-96 w-full mb-8 rounded-lg overflow-hidden">
-            <BlogImage
-              src={post.coverImage}
-              alt={post.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-              priority
-            />
-          </div>
-        </header>
-        
-        {/* Contenido del artículo */}
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
-        
-        {/* Información del autor */}
-        <div className="mt-12 not-prose">
-          <h3 className="text-xl font-semibold mb-4">Sobre el autor</h3>
-          <BlogAuthor
-            name={post.author.name}
-            avatar={post.author.avatar}
-            role={post.author.role}
-            bio={post.author.bio}
-            socialLinks={post.author.socialLinks}
-          />
-        </div>
-        
-        {/* Enlaces de compartir */}
-        <div className="mt-8 not-prose">
-          <h3 className="text-lg font-semibold mb-3">Compartir este artículo</h3>
-          <div className="flex gap-2">
-            <button className="btn btn-circle btn-outline">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
-              </svg>
-            </button>
-            <button className="btn btn-circle btn-outline">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
-              </svg>
-            </button>
-            <button className="btn btn-circle btn-outline">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-                <rect x="2" y="9" width="4" height="12"></rect>
-                <circle cx="4" cy="4" r="2"></circle>
-              </svg>
-            </button>
-            <button className="btn btn-circle btn-outline">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-                <polyline points="16 6 12 2 8 6"></polyline>
-                <line x1="12" y1="2" x2="12" y2="15"></line>
-              </svg>
-            </button>
-          </div>
-        </div>
-        
-        {/* Enlaces a artículos relacionados */}
-        <div className="mt-12 not-prose">
-          <h3 className="text-xl font-semibold mb-6">Artículos relacionados</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {SAMPLE_BLOG_POSTS.filter(p => 
-              p.slug !== post.slug && 
-              p.category.id === post.category.id
-            ).slice(0, 2).map(relatedPost => (
-              <div key={relatedPost.slug} className="card bg-base-200">
-                <div className="card-body p-4">
-                  <h4 className="card-title text-base">
-                    <Link href={`/blog/${relatedPost.slug}`} className="hover:text-primary transition-colors">
-                      {relatedPost.title}
-                    </Link>
-                  </h4>
-                  <p className="text-sm line-clamp-2">{relatedPost.excerpt}</p>
-                  <Link href={`/blog/${relatedPost.slug}`} className="text-sm font-medium text-primary mt-2">
-                    Leer más →
-                  </Link>
+    <div className="bg-base-100">
+      {noPost && (
+        <div className="bg-base-100">
+          <BlogLayout>
+            <div className="flex justify-center items-center py-16">
+              <div className="flex flex-col justify-center items-center py-16 px-4">
+                <div className="bg-error/10 border border-error/30 rounded-lg p-6 max-w-md w-full text-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-12 w-12 mx-auto text-error mb-3"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <h2 className="text-xl font-bold text-error mb-2">
+                    Artículo no encontrado
+                  </h2>
+                  <p className="text-base-content/80 mb-4">
+                    Lo sentimos, el artículo que estás buscando no existe o ha
+                    sido trasladado a otra ubicación.
+                  </p>
+                  <p className="text-sm text-base-content/60">
+                    Serás redirigido automáticamente a la página de blog en 5
+                    segundos...
+                  </p>
+                  <button
+                    onClick={() => router.push("/blog")}
+                    className="btn btn-error btn-sm mt-4"
+                  >
+                    Ir al blog ahora
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          </BlogLayout>
         </div>
-      </article>
-    </BlogLayout>
+      )}
+      {slug && post && (
+        <BlogLayout activeCategory={post.category.id}>
+          <article className="prose prose-lg max-w-none">
+            {/* Encabezado del artículo */}
+            <header className="mb-8 not-prose">
+              <BlogCategory id={post.category.id} name={post.category.name} />
+
+              <h1 className="text-3xl font-bold mt-3 mb-4">{post.title}</h1>
+
+              <div className="flex items-center text-sm text-base-content/70 mb-6">
+                <span>{post.publishDate}</span>
+                <span className="mx-2">•</span>
+                <span>{post.readTime} min lectura</span>
+              </div>
+
+              <div className="relative h-96 w-full mb-8 rounded-lg overflow-hidden">
+                <BlogImage
+                  src={post.coverImage}
+                  alt={post.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  priority
+                />
+              </div>
+            </header>
+
+            {/* Contenido del artículo */}
+            <div dangerouslySetInnerHTML={{ __html: post.content }} />
+
+            {/* Información del autor */}
+            <div className="mt-12 not-prose">
+              <h3 className="text-xl font-semibold mb-4">Sobre el autor</h3>
+              <BlogAuthor
+                name={post.author.name}
+                avatar={post.author.avatar}
+                role={post.author.role}
+                bio={post.author.bio}
+                socialLinks={post.author.socialLinks}
+              />
+            </div>
+
+            {/* Enlaces de compartir */}
+            <div className="mt-8 not-prose">
+              <h3 className="text-lg font-semibold mb-3">
+                Compartir este artículo
+              </h3>
+              <div className="flex gap-2">
+                <button className="btn btn-circle btn-outline">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+                  </svg>
+                </button>
+                <button className="btn btn-circle btn-outline">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
+                  </svg>
+                </button>
+                <button className="btn btn-circle btn-outline">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                    <rect x="2" y="9" width="4" height="12"></rect>
+                    <circle cx="4" cy="4" r="2"></circle>
+                  </svg>
+                </button>
+                <button className="btn btn-circle btn-outline">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                    <polyline points="16 6 12 2 8 6"></polyline>
+                    <line x1="12" y1="2" x2="12" y2="15"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Enlaces a artículos relacionados */}
+            <div className="mt-12 not-prose">
+              <h3 className="text-xl font-semibold mb-6">
+                Artículos relacionados
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {SAMPLE_BLOG_POSTS.filter(
+                  (p) =>
+                    p.slug !== post.slug && p.category.id === post.category.id
+                )
+                  .slice(0, 2)
+                  .map((relatedPost) => (
+                    <div key={relatedPost.slug} className="card bg-base-200">
+                      <div className="card-body p-4">
+                        <h4 className="card-title text-base">
+                          <Link
+                            href={`/blog/${relatedPost.slug}`}
+                            className="hover:text-primary transition-colors"
+                          >
+                            {relatedPost.title}
+                          </Link>
+                        </h4>
+                        <p className="text-sm line-clamp-2">
+                          {relatedPost.excerpt}
+                        </p>
+                        <Link
+                          href={`/blog/${relatedPost.slug}`}
+                          className="text-sm font-medium text-primary mt-2"
+                        >
+                          Leer más →
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </article>
+        </BlogLayout>
+      )}
     </div>
   );
 }
