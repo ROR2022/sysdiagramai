@@ -54,7 +54,7 @@ export async function getSubscriptionPlans() {
 }
 
 // Función para crear o recuperar un cliente de Stripe
-async function getOrCreateCustomer(email: string, userId: string) {
+/* async function getOrCreateCustomer(email: string, userId: string) {
   const existingCustomers = await stripe.customers.list({ email });
   
   if (existingCustomers.data.length > 0) {
@@ -67,7 +67,7 @@ async function getOrCreateCustomer(email: string, userId: string) {
       userId,
     },
   });
-}
+} */
 
 // Función para crear una sesión de checkout
 export async function createCheckoutSession({
@@ -80,7 +80,7 @@ export async function createCheckoutSession({
   email: string;
 }) {
   // Obtener o crear el cliente
-  const customer = await getOrCreateCustomer(email, userId);
+  //const customer = await getOrCreateCustomer(email, userId);
   /*
   
 
@@ -110,7 +110,6 @@ export async function createCheckoutSession({
   */
 
   return stripe.checkout.sessions.create({
-    customer: customer.id,
     payment_method_types: ["card"],
     line_items: [
       {
