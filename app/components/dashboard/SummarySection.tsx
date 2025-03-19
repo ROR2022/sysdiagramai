@@ -226,7 +226,7 @@ export default function SummarySection({
             )}
             
             <div className="card-actions justify-end mt-4">
-              <Link href="/dashboard/diagrams" className="btn btn-sm btn-ghost">
+              <Link href="/dashboard/requirements" className="btn btn-sm btn-ghost">
                 Ver todos →
               </Link>
             </div>
