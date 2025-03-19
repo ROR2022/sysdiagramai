@@ -30,5 +30,17 @@ export async function getUserById(id: string) {
     }
 }
 
+export async function updateCredits(id: string, credits: number) {
+    try {
+        const client = await clientPromise;
+        const db = client.db();
+        const user = await db.collection('users').updateOne({ _id: new ObjectId(id) }, { $inc: { diagramsUsed: credits } });
+        return user;
+    } catch (error) {
+        console.error('Error al actualizar los creditos:', error);
+        throw error;
+    }
+}
+
 
 

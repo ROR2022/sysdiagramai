@@ -119,6 +119,7 @@ export async function createCheckoutSession({
       },
     ],
     mode: "subscription",
+    customer_email: email,
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription?success=true`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription?canceled=true`,
     metadata: {

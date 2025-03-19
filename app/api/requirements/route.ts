@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { SystemRequirementService } from "@/libs/services/systemRequirementService";
+import { updateCredits } from "../utils/users";
 
 export const runtime = 'nodejs';
 
@@ -51,6 +52,10 @@ export async function POST(request: NextRequest) {
     const data = await request.json();
 
     const requirement = await SystemRequirementService.create(userId, data);
+    if(requirement){
+      //esto significa que el usuario consumio un credito y hay que actualizar los creditos del usuario
+      await updateCredits(userId, -1);
+    }
 
     return NextResponse.json(requirement, { status: 201 });
   } catch (error) {
