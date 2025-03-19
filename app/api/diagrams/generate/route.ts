@@ -2,16 +2,12 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import connectDB from '@/libs/mongoose';
 import { SystemRequirement } from '@/libs/models/systemRequirement';
+import { GenerationStatusService } from '@/libs/services/generationStatusService';
 
 export const dynamic = 'force-dynamic';
 
 // Especificar explícitamente el runtime para evitar problemas con TurboPack
 export const runtime = "nodejs";
-
-// Función para generar un token simple
-function generateToken(): string {
-  return Math.random().toString(36).substring(2, 15);
-}
 
 /**
  * POST /api/diagrams/generate
@@ -63,12 +59,17 @@ export async function POST(request: Request) {
       { $set: { status: "generating", updated: new Date() } }
     );
     
-    // Generar un token para la solicitud al webhook
-    const token = generateToken();
+    // Iniciar el seguimiento de estado de generación
+    const generationStatus = await GenerationStatusService.initGeneration(
+      requirementId,
+      session.user.id as string
+    );
+    
+    console.log(`Iniciando generación de diagramas para requisito ${requirementId}`);
     
     // Obtener el origen de la solicitud para construir la URL del webhook
     const origin = request.headers.get('origin') || request.headers.get('host') || '';
-    const protocol = origin.startsWith('localhost') ? 'http' : 'https';
+    const protocol = origin.includes('localhost') ? 'http' : 'https';
     const baseUrl = origin.startsWith('http') ? origin : `${protocol}://${origin}`;
     
     // Disparar el webhook de forma asíncrona
@@ -80,16 +81,24 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         requirementId,
         userId: session.user.id,
-        token
+        token: generationStatus.requestToken
       }),
     }).catch(error => {
       console.error('Error al disparar el webhook:', error);
+      // Registrar el error en el estado de generación, pero no afectar la respuesta al cliente
+      GenerationStatusService.addLog(
+        requirementId,
+        session.user.id as string,
+        `Error al iniciar el webhook: ${error instanceof Error ? error.message : String(error)}`,
+        'error'
+      ).catch(e => console.error('Error al registrar log:', e));
     });
     
     return NextResponse.json({
       success: true,
       message: "Generación de diagramas iniciada correctamente",
-      requirementId
+      requirementId,
+      statusId: generationStatus._id
     });
     
   } catch (error: unknown) {
