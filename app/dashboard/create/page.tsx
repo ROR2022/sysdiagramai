@@ -44,7 +44,21 @@ export default function CreateDiagramPage() {
           
           const data = await response.json();
           console.log('Loaded requirement data:', data);
-          setInitialData(data);
+          //el campo name de data debe ser impactado en el initialData basicInfo projectName
+
+          const tempData = {
+            basicInfo: {
+              projectName: data.name,
+              description: data.description,
+              applicationType: data.applicationType
+            },
+            functionalRequirements: data.functionalRequirements || [],
+            nonFunctionalRequirements: data.nonFunctionalRequirements || {},
+            techPreferences: data.techPreferences || {},
+            additionalContext: data.additionalContext || ''
+          };
+          
+          setInitialData(tempData);
         } catch (error) {
           console.error('Error al cargar el requisito:', error);
           setLoadError(error instanceof Error ? error.message : 'Error desconocido');

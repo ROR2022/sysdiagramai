@@ -9,6 +9,29 @@ import {
 } from "@/app/api/utils/systemRequirement";
 //import connectDB from "../mongoose";
 
+// Definir tipo para datos planos
+interface PlainFormData {
+  userId?: string;
+  name: string;
+  description: string;
+  applicationType: string;
+  functionalRequirements: string[];
+  nonFunctionalRequirements: {
+    scalability?: string;
+    availability?: string;
+    security?: string;
+    performance?: string;
+  };
+  techPreferences: {
+    backendLanguage?: string;
+    frameworks?: string[];
+    databases?: string[];
+    architecture?: string;
+  };
+  additionalContext?: string;
+  status?: "draft" | "completed" | "generating" | "failed";
+}
+
 // Servicio para manejar las operaciones con los requisitos del sistema
 export const SystemRequirementService = {
   /**
@@ -17,23 +40,38 @@ export const SystemRequirementService = {
    * @param formData Datos del formulario
    * @returns El requisito creado
    */
-  async create(userId: string, formData: FormData): Promise<ISystemRequirement> {
+  async create(userId: string, formData: FormData | PlainFormData): Promise<ISystemRequirement> {
+    // Detectar si recibimos datos en formato plano o anidado
+    console.log("Datos recibidos para crear:", formData);
     
-    
-    const data = {
-      userId,
-      name: formData.basicInfo.projectName,
-      description: formData.basicInfo.description,
-      applicationType: formData.basicInfo.applicationType,
-      functionalRequirements: formData.functionalRequirements,
-      nonFunctionalRequirements: formData.nonFunctionalRequirements,
-      techPreferences: formData.techPreferences,
-      additionalContext: formData.additionalContext,
-      status: "draft" as const
-    };
-    
-    
-    return await createSystemRequirement(data);
+    // Si ya tiene los campos directos, asumir que es formato plano
+    if ('name' in formData && formData.name !== undefined) {
+      console.log("Recibidos datos en formato plano");
+      const plainData = formData as PlainFormData;
+      plainData.userId = userId;
+      return await createSystemRequirement(plainData);
+    } 
+    // Si tiene estructura anidada, transformar a formato plano
+    else if ('basicInfo' in formData) {
+      console.log("Recibidos datos en formato anidado, transformando...");
+      const data: PlainFormData = {
+        userId,
+        name: formData.basicInfo.projectName,
+        description: formData.basicInfo.description,
+        applicationType: formData.basicInfo.applicationType,
+        functionalRequirements: formData.functionalRequirements,
+        nonFunctionalRequirements: formData.nonFunctionalRequirements,
+        techPreferences: formData.techPreferences,
+        additionalContext: formData.additionalContext,
+        status: "draft"
+      };
+      return await createSystemRequirement(data);
+    }
+    // Si no se puede determinar el formato, lanzar error
+    else {
+      console.error("Formato de datos desconocido:", formData);
+      throw new Error("Formato de datos no reconocido");
+    }
   },
 
   /**
@@ -43,19 +81,39 @@ export const SystemRequirementService = {
    * @param formData Datos del formulario
    * @returns El requisito actualizado
    */
-  async update(id: string, userId: string, formData: FormData): Promise<ISystemRequirement | null> {
+  async update(id: string, userId: string, formData: FormData | PlainFormData): Promise<ISystemRequirement | null> {
+    // Detectar si recibimos datos en formato plano o anidado
+    console.log("Datos recibidos para actualizar:", formData);
     
+    let updateData: Partial<PlainFormData> & { updated: Date };
     
-    const updateData = {
-      name: formData.basicInfo.projectName,
-      description: formData.basicInfo.description,
-      applicationType: formData.basicInfo.applicationType,
-      functionalRequirements: formData.functionalRequirements,
-      nonFunctionalRequirements: formData.nonFunctionalRequirements,
-      techPreferences: formData.techPreferences,
-      additionalContext: formData.additionalContext,
-      updated: new Date()
-    };
+    // Si ya tiene los campos directos, asumir que es formato plano
+    if ('name' in formData && formData.name !== undefined) {
+      console.log("Recibidos datos en formato plano para actualizar");
+      updateData = {
+        ...formData as PlainFormData,
+        updated: new Date()
+      };
+    } 
+    // Si tiene estructura anidada, transformar a formato plano
+    else if ('basicInfo' in formData) {
+      console.log("Recibidos datos en formato anidado para actualizar, transformando...");
+      updateData = {
+        name: formData.basicInfo.projectName,
+        description: formData.basicInfo.description,
+        applicationType: formData.basicInfo.applicationType,
+        functionalRequirements: formData.functionalRequirements,
+        nonFunctionalRequirements: formData.nonFunctionalRequirements,
+        techPreferences: formData.techPreferences,
+        additionalContext: formData.additionalContext,
+        updated: new Date()
+      };
+    }
+    // Si no se puede determinar el formato, lanzar error
+    else {
+      console.error("Formato de datos desconocido para actualizar:", formData);
+      throw new Error("Formato de datos no reconocido");
+    }
     
     return await updateSystemRequirementById(id, updateData);
   },

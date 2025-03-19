@@ -1,11 +1,14 @@
 import { ISystemRequirement } from '@/libs/models/systemRequirement';
 import { formatDate } from '@/libs/utils/date';
+import Link from 'next/link';
 
 interface RequirementDetailsProps {
   requirement: ISystemRequirement;
 }
 
 export default function RequirementDetails({ requirement }: RequirementDetailsProps) {
+  const requirementId = requirement._id?.toString() || '';
+
   return (
     <div className="bg-base-200 text-base-content p-6 rounded-box shadow">
       <div className="flex justify-between items-start mb-6">
@@ -16,13 +19,32 @@ export default function RequirementDetails({ requirement }: RequirementDetailsPr
             Actualizado: {formatDate(requirement.updated || new Date())}
           </p>
         </div>
-        <div className="badge badge-lg" 
-          style={{ 
-            backgroundColor: getStatusColor(requirement.status || 'draft'),
-            color: 'white' 
-          }}
-        >
-          {getStatusText(requirement.status || 'draft')}
+        <div className="flex flex-col items-center gap-3">
+          <div>
+          <Link 
+            href={`/dashboard/create?id=${requirementId}`}
+            className="btn btn-primary flex flex-row"
+          >
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-4 w-4" 
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span>Editar</span>
+          </Link>
+          </div>
+          <div className="badge badge-lg" 
+            style={{ 
+              backgroundColor: getStatusColor(requirement.status || 'draft'),
+              color: 'white' 
+            }}
+          >
+            {getStatusText(requirement.status || 'draft')}
+          </div>
         </div>
       </div>
 

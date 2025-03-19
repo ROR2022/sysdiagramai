@@ -30,7 +30,33 @@ export async function getSystemRequirementsByUserId(userId: string) {
 export async function updateSystemRequirementById(id: string, data: ISystemRequirement) {
     try {
         await connectDB();
-        const systemRequirement = await SystemRequirement.findByIdAndUpdate(id, data, { new: true });
+        console.log(`Intentando actualizar requisito con ID: ${id}`, data);
+        
+        // Extraer userId si existe en data para asegurar que solo actualizamos documentos del mismo usuario
+        const { userId } = data;
+        if (!userId) {
+            console.warn('No se proporcionó userId en los datos de actualización');
+        }
+        
+        // Buscar primero para confirmar que existe
+        const existing = await SystemRequirement.findOne({ _id: id });
+        if (!existing) {
+            console.error(`No se encontró el requisito con ID: ${id}`);
+            return null;
+        }
+        
+        // Asegurar que estamos actualizando, no creando uno nuevo
+        console.log(`Requisito encontrado, actualizando: ${id}, ${existing.name}`);
+        
+        // Usar findOneAndUpdate para garantizar la actualización por ID y opcionalmente userId
+        const query = userId ? { _id: id, userId } : { _id: id };
+        const systemRequirement = await SystemRequirement.findOneAndUpdate(
+            query, 
+            data, 
+            { new: true }
+        );
+        
+        console.log(`Requisito actualizado: ${systemRequirement?._id}, ${systemRequirement?.name}`);
         return systemRequirement;
     } catch (error) {
         console.error('Error al actualizar el requisito del sistema:', error);

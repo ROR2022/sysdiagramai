@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { BasicInfoSectionProps } from './types';
 
 export default function BasicInfoSection({ 
@@ -19,6 +19,17 @@ export default function BasicInfoSection({
       [e.target.name]: e.target.value
     });
   };
+
+  // Nueva función para manejar el evento blur y forzar una actualización inmediata
+  const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    console.log(`Campo ${e.target.name} perdió el foco con valor:`, e.target.value);
+    
+    // Actualizar el estado con el valor actual del DOM
+    updateData({
+      ...data,
+      [e.target.name]: e.target.value
+    });
+  }, [data, updateData]);
 
   // Asegurarse de que data existe antes de renderizar
   if (!data) {
@@ -47,6 +58,7 @@ export default function BasicInfoSection({
           name="projectName"
           value={data.projectName || ''}
           onChange={handleChange}
+          onBlur={handleBlur}
           placeholder="Ej. Sistema de Gestión de Inventario" 
           className="input input-bordered w-full" 
         />
@@ -61,6 +73,7 @@ export default function BasicInfoSection({
           name="applicationType"
           value={data.applicationType || 'web'}
           onChange={handleChange}
+          onBlur={handleBlur}
         >
           <option value="web">Aplicación Web</option>
           <option value="mobile">Aplicación Móvil</option>
@@ -80,6 +93,7 @@ export default function BasicInfoSection({
           name="description"
           value={data.description || ''}
           onChange={handleChange}
+          onBlur={handleBlur}
           placeholder="Describe brevemente el propósito y objetivos de tu sistema..."
         ></textarea>
       </div>

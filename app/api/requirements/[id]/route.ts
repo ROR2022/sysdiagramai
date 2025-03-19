@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/auth";
-import clientPromise from '@/libs/mongo';
-import { ObjectId } from 'mongodb';
+//import clientPromise from '@/libs/mongo';
+//import { ObjectId } from 'mongodb';
+import connectDB from "@/libs/mongoose";
+import { SystemRequirement } from "@/libs/models/systemRequirement";
 
 // Especificar explícitamente el runtime para evitar problemas con TurboPack
 export const runtime = "nodejs";
@@ -29,7 +31,8 @@ export async function GET(
     }
     
     const listUrl = request.nextUrl.pathname.split('/');
-    const id = listUrl[listUrl.length - 2];
+    console.log('listUrl:..', listUrl);
+    const id = listUrl[listUrl.length - 1];
     // Obtener el ID del requisito de los parámetros de ruta
     const requirementId = id;
     
@@ -41,12 +44,12 @@ export async function GET(
     }
     
     // Conectar a la base de datos
-    const client = await clientPromise;
-    const db = client.db();
+    await connectDB();
+    //const db = client.db();
     
     // Buscar el requisito por ID
-    const requirement = await db.collection("requirements").findOne({
-      _id: new ObjectId(requirementId),
+    const requirement = await SystemRequirement.findOne({
+      _id: id,
       userId: session.user.id
     });
     
@@ -89,7 +92,7 @@ export async function PUT(
     }
     
     const listUrl = request.nextUrl.pathname.split('/');
-    const id = listUrl[listUrl.length - 2];
+    const id = listUrl[listUrl.length - 1];
     // Obtener el ID del requisito de los parámetros de ruta
     const requirementId = id;
     
@@ -104,12 +107,11 @@ export async function PUT(
     const data = await request.json();
     
     // Conectar a la base de datos
-    const client = await clientPromise;
-    const db = client.db();
+    await connectDB();
     
     // Verificar que el requisito exista y pertenezca al usuario
-    const existingRequirement = await db.collection("requirements").findOne({
-      _id: new ObjectId(requirementId),
+    const existingRequirement = await SystemRequirement.findOne({
+      _id: requirementId,
       userId: session.user.id
     });
     
@@ -127,23 +129,24 @@ export async function PUT(
       userId: session.user.id
     };
     
+    console.log(`Actualizando requisito con ID: ${requirementId}`, updateData);
+    
     // Actualizar el requisito
-    const result = await db.collection("requirements").updateOne(
-      { _id: new ObjectId(requirementId) },
-      { $set: updateData }
+    const updatedRequirement = await SystemRequirement.findOneAndUpdate(
+      { _id: requirementId, userId: session.user.id },
+      updateData,
+      { new: true }
     );
     
-    if (result.matchedCount === 0) {
+    if (!updatedRequirement) {
+      console.error(`No se pudo actualizar el requisito con ID: ${requirementId}`);
       return NextResponse.json(
         { error: "No se pudo actualizar el requisito" },
         { status: 500 }
       );
     }
     
-    // Obtener el requisito actualizado
-    const updatedRequirement = await db.collection("requirements").findOne({
-      _id: new ObjectId(requirementId)
-    });
+    console.log(`Requisito actualizado exitosamente: ${requirementId}`);
     
     // Retornar el requisito actualizado
     return NextResponse.json(updatedRequirement);
@@ -177,7 +180,7 @@ export async function DELETE(
     }
     
     const listUrl = request.nextUrl.pathname.split('/');
-    const id = listUrl[listUrl.length - 2];
+    const id = listUrl[listUrl.length - 1];
     // Obtener el ID del requisito de los parámetros de ruta
     const requirementId = id;
     
@@ -189,12 +192,11 @@ export async function DELETE(
     }
     
     // Conectar a la base de datos
-    const client = await clientPromise;
-    const db = client.db();
+    await connectDB();
     
     // Verificar que el requisito exista y pertenezca al usuario
-    const existingRequirement = await db.collection("requirements").findOne({
-      _id: new ObjectId(requirementId),
+    const existingRequirement = await SystemRequirement.findOne({
+      _id: requirementId,
       userId: session.user.id
     });
     
@@ -206,12 +208,9 @@ export async function DELETE(
     }
     
     // Eliminar el requisito
-    const result = await db.collection("requirements").deleteOne({
-      _id: new ObjectId(requirementId),
-      userId: session.user.id
-    });
+    const result = await SystemRequirement.findByIdAndDelete(requirementId);
     
-    if (result.deletedCount === 0) {
+    if (!result) {
       return NextResponse.json(
         { error: "No se pudo eliminar el requisito" },
         { status: 500 }

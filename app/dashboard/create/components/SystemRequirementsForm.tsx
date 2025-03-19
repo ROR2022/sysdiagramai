@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
 import { FormData, SystemRequirementsFormProps } from './types';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
+import { ISystemRequirement } from '@/libs/models/systemRequirement';
 
 // Importar componentes de sección
 import BasicInfoSection from './BasicInfoSection';
@@ -14,7 +15,19 @@ import TechPreferencesSection from './TechPreferencesSection';
 import AdditionalContextSection from './AdditionalContextSection';
 import ReviewSection from './ReviewSection';
 
-export default function SystemRequirementsForm({ initialData, onSubmit, requirementId }: SystemRequirementsFormProps = {}) {
+const GetSearchParams = ({setRequirementId}: {setRequirementId: (id: string) => void}) => {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const id = searchParams.get('id');
+    if (id) {
+      console.log(`Detectado requirementId de searchParams: ${id}`);
+      setRequirementId(id);
+    }
+  }, [searchParams, setRequirementId]);
+  return null;
+}
+
+export default function SystemRequirementsForm({ initialData, onSubmit }: SystemRequirementsFormProps = {}) {
   const router = useRouter();
   const { data: session } = useSession();
   
@@ -25,6 +38,32 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
   const [success, setSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  
+  // Estado para el requirementId
+  const [requirementId, setRequirementId] = useState<string | undefined>(
+    // El initialData podría venir de la API y tener un _id
+    (initialData as ISystemRequirement)?._id
+  );
+  
+  // Estado para rastrear si acaba de crearse un nuevo requisito
+  const [newRequirementCreated, setNewRequirementCreated] = useState(false);
+
+  // Efecto para detectar y actualizar requirementId de initialData cuando cambia
+  useEffect(() => {
+    const id = (initialData as ISystemRequirement)?._id;
+    if (id) {
+      console.log(`Detectado requirementId de initialData: ${id}`);
+      setRequirementId(id);
+    }
+  }, [initialData]);
+
+  // Referencias para control de autoguardado inteligente
+  const lastSavedDataRef = useRef<string>('');
+  const lastChangeTimeRef = useRef<number>(Date.now());
+  const userActiveRef = useRef<boolean>(true);
+  const initialFormDataRef = useRef<string>('');
+  const initialLoadCompleteRef = useRef<boolean>(false);
+  const operationInProgressRef = useRef<boolean>(false);
 
   // Estado para datos del formulario con valores por defecto
   const defaultFormData = useMemo<FormData>(() => ({
@@ -56,7 +95,7 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
     return {
       basicInfo: {
         ...defaultFormData.basicInfo,
-        ...(initialData.basicInfo || {})
+        ...(initialData.basicInfo || {}),
       },
       functionalRequirements: initialData.functionalRequirements || defaultFormData.functionalRequirements,
       nonFunctionalRequirements: {
@@ -75,7 +114,7 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
   useEffect(() => {
     if (initialData) {
       console.log('Actualizando formData con initialData:', initialData);
-      setFormData({
+      const updatedFormData = {
         basicInfo: {
           ...defaultFormData.basicInfo,
           ...(initialData.basicInfo || {})
@@ -90,11 +129,63 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
           ...(initialData.techPreferences || {})
         },
         additionalContext: initialData.additionalContext || defaultFormData.additionalContext
-      });
+      };
+      
+      setFormData(updatedFormData);
+      
+      // Guardar el estado inicial para comparaciones futuras
+      initialFormDataRef.current = JSON.stringify(updatedFormData);
+      console.log('Estado inicial del formulario guardado para comparaciones');
+      
+      // Si tenemos datos iniciales y un ID, marcar la carga inicial como completa
+      if (requirementId && requirementId.trim() !== '') {
+        console.log(`Carga inicial completada con ID: ${requirementId}`);
+        initialLoadCompleteRef.current = true;
+      }
     }
   }, 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  [initialData]);
+  [initialData, requirementId]);
+
+  // Efecto para marcar la carga inicial como completa cuando tenemos requirementId
+  useEffect(() => {
+    if (requirementId && requirementId.trim() !== '') {
+      console.log(`ID de requisito establecido: ${requirementId}`);
+      // Dar tiempo para que se carguen los datos iniciales antes de permitir autoguardado
+      const timer = setTimeout(() => {
+        initialLoadCompleteRef.current = true;
+        console.log('Carga inicial marcada como completa, autoguardado habilitado');
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [requirementId]);
+
+  // Nuevo efecto para avanzar al siguiente paso cuando se crea un nuevo requisito
+  useEffect(() => {
+    if (newRequirementCreated && requirementId && requirementId.trim() !== '') {
+      console.log(`Nuevo requisito creado con ID: ${requirementId}, avanzando al siguiente paso...`);
+      
+      // Avanzar al siguiente paso
+      setCurrentStep(prevStep => prevStep + 1);
+      
+      // Resetear el flag
+      setNewRequirementCreated(false);
+      
+      // Mostrar confirmación solo después de que el estado se haya actualizado
+      toast.success("Requisito creado correctamente");
+      //console.log("Requisito creado correctamente...", currentStep);
+    }
+  }, [newRequirementCreated, requirementId]);
+
+  // Efecto para registrar cambios en currentStep
+  useEffect(() => {
+    console.log(`[DEBUG] currentStep actualizado a: ${currentStep}`);
+    if(currentStep === 1 && newRequirementCreated) {
+      console.log("Requisito creado correctamente...", currentStep);
+      setCurrentStep(2);
+    }
+  }, [currentStep, newRequirementCreated]);
 
   // Función auxiliar para obtener el título del paso
   const getStepTitle = (step: number): string => {
@@ -109,74 +200,184 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
     }
   };
 
-  // Función para guardar automáticamente, usando useCallback para evitar re-creaciones
-  const autoSave = useCallback(async () => {
-    // No guardar si no hay un proyecto iniciado o si no hay sesión
-    if (!session?.user?.id || !formData.basicInfo.projectName) {
-      console.log('No se puede autoguardar:', {
-        userId: session?.user?.id,
-        hasProjectName: !!formData.basicInfo.projectName
-      });
-      return;
+  // Función para convertir formData (estructura anidada) al formato plano para el servidor
+  const convertToServerFormat = useCallback((formData: FormData) => {
+    return {
+      userId: session?.user?.id,
+      name: formData.basicInfo.projectName,
+      description: formData.basicInfo.description,
+      applicationType: formData.basicInfo.applicationType,
+      functionalRequirements: formData.functionalRequirements,
+      nonFunctionalRequirements: formData.nonFunctionalRequirements,
+      techPreferences: formData.techPreferences,
+      additionalContext: formData.additionalContext,
+      status: "draft" as const
+    };
+  }, [session?.user?.id]);
+
+  // Función para verificar si el formulario ha cambiado realmente
+  const hasFormChanged = useCallback(() => {
+    const currentFormData = JSON.stringify(formData);
+    
+    // Si no hay datos guardados previamente, comparar con el estado inicial
+    if (!lastSavedDataRef.current) {
+      // Si tampoco hay estado inicial, considerar que ha cambiado
+      if (!initialFormDataRef.current) return true;
+      
+      // Comparar con el estado inicial
+      const hasChanged = currentFormData !== initialFormDataRef.current;
+      if (!hasChanged) {
+        console.log('No hay cambios respecto al estado inicial');
+      }
+      return hasChanged;
     }
     
-    console.log('Iniciando autoguardado con usuario:', {
-      userId: session.user.id,
-      email: session.user.email
-    });
+    // Comparar con los últimos datos guardados
+    const hasChanged = currentFormData !== lastSavedDataRef.current;
+    if (!hasChanged) {
+      console.log('No hay cambios respecto a la última versión guardada');
+    }
+    return hasChanged;
+  }, [formData]);
+
+  // Función para guardar automáticamente
+  const autoSave = useCallback(async () => {
+    // No guardar si la carga inicial no ha completado
+    if (!initialLoadCompleteRef.current) {
+      console.log("Autoguardado omitido: carga inicial no completada");
+      return Promise.resolve(null);
+    }
     
+    // No guardar si hay una operación en progreso
+    if (operationInProgressRef.current) {
+      console.log("Autoguardado omitido: operación en progreso");
+      return Promise.resolve(null);
+    }
+    
+    // No guardar si no hay cambios o si está en proceso de guardado
+    if (!hasFormChanged() || isSaving) {
+      console.log("Autoguardado omitido: No hay cambios o ya está guardando");
+      return Promise.resolve(null);
+    }
+
+    console.log("Iniciando autoguardado...", requirementId ? "ACTUALIZANDO" : "CREANDO");
+    console.log("requirementId actual:", requirementId);
+    
+    // Marcar operación en progreso
+    operationInProgressRef.current = true;
+    setIsSaving(true);
+
+    // Convertir a formato plano para el servidor
+    const serverData = convertToServerFormat(formData);
+    console.log('Datos para autoguardado:', serverData);
+
     try {
-      setIsSaving(true);
-      
-      const endpoint = requirementId 
+      const endpoint = requirementId && requirementId.trim() !== '' 
         ? `/api/requirements/${requirementId}` 
         : '/api/requirements';
       
-      const method = requirementId ? 'PUT' : 'POST';
-      
+      const method = requirementId && requirementId.trim() !== '' ? 'PUT' : 'POST';
+
       console.log(`Enviando solicitud ${method} a ${endpoint}`);
-      
       const response = await fetch(endpoint, {
         method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(serverData),
       });
-      
-      if (!response.ok) {
-        throw new Error('Error al guardar el formulario');
-      }
-      
-      const savedData = await response.json();
-      console.log('Datos guardados:', savedData);
-      
-      // Si es una creación nueva, actualizar la URL con el ID
-      if (!requirementId && savedData._id) {
-        console.log(`Actualizando URL con ID: ${savedData._id}`);
-        router.replace(`/dashboard/create?id=${savedData._id}`);
-      }
-      
-      setLastSaved(new Date());
-    } catch (error) {
-      console.error('Error al autoguardar:', error);
-      // No mostrar toast para no molestar al usuario con errores de autoguardado
-    } finally {
-      setIsSaving(false);
-    }
-  }, [formData, requirementId, session, router]);
 
-  // Efecto para autoguardar cuando cambia el formulario
+      if (!response.ok) {
+        throw new Error(`Error en la solicitud: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Respuesta del servidor:', data);
+
+      // Si es una creación nueva, actualizar la URL con el ID
+      if ((!requirementId || requirementId.trim() === '') && data._id) {
+        console.log(`Actualizando URL con ID: ${data._id}`);
+        setRequirementId(data._id);
+        // Usar history.replaceState en lugar de router.replace para evitar recarga
+        window.history.replaceState({}, '', `/dashboard/create?id=${data._id}`);
+        console.log(`URL actualizada sin recarga usando history API: /dashboard/create?id=${data._id}`);
+      }
+
+      // Actualizar la referencia de datos guardados
+      lastSavedDataRef.current = JSON.stringify(formData);
+      lastChangeTimeRef.current = Date.now();
+      setLastSaved(new Date());
+
+      // Mostrar feedback al usuario
+      toast.success("Cambios guardados correctamente");
+
+      // Desmarcar operación en progreso
+      operationInProgressRef.current = false;
+      setIsSaving(false);
+      
+      // Devolver los datos para que puedan ser usados por otras funciones
+      return data;
+    } catch (error) {
+      console.error('Error durante el autoguardado:', error);
+      toast.error('Error al guardar los cambios');
+      operationInProgressRef.current = false;
+      setIsSaving(false);
+      return null;
+    }
+  }, [formData, requirementId, hasFormChanged, isSaving, convertToServerFormat]);
+
+  // Resetear el timer de inactividad cuando el usuario interactúa
+  const resetInactivityTimer = useCallback(() => {
+    lastChangeTimeRef.current = Date.now();
+    userActiveRef.current = true;
+  }, []);
+
+  // Efecto para detectar actividad del usuario
   useEffect(() => {
+    const handleUserActivity = () => {
+      resetInactivityTimer();
+    };
+
+    // Añadir event listeners para detectar actividad
+    window.addEventListener('mousemove', handleUserActivity);
+    window.addEventListener('keydown', handleUserActivity);
+    window.addEventListener('click', handleUserActivity);
+    window.addEventListener('scroll', handleUserActivity);
+
+    return () => {
+      // Limpiar event listeners
+      window.removeEventListener('mousemove', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('click', handleUserActivity);
+      window.removeEventListener('scroll', handleUserActivity);
+    };
+  }, [resetInactivityTimer]);
+
+  // Efecto para autoguardar cuando cambia el formulario con frecuencia variable
+  useEffect(() => {
+    // Actualizar tiempo de último cambio
+    lastChangeTimeRef.current = Date.now();
+    
+    // Determinar el tiempo de espera basado en la actividad del usuario
+    const autoSaveDelay = userActiveRef.current ? 5000 : 15000; // 5 segundos si está activo, 15 si no
+    
     const timer = setTimeout(() => {
       autoSave();
-    }, 5000); // Guardar automáticamente 5 segundos después de cambios
+    }, autoSaveDelay);
     
     return () => clearTimeout(timer);
-  }, [autoSave]);
+  }, [autoSave, formData]);
+
+  // Marcar cambios iniciales cuando se carga la página
+  useEffect(() => {
+    if (initialData) {
+      lastSavedDataRef.current = JSON.stringify(formData);
+    }
+  }, [initialData, formData]);
 
   // Handlers para actualizar cada sección
   const updateBasicInfo = (data: FormData['basicInfo']) => {
+    resetInactivityTimer();
     setFormData(prev => ({
       ...prev,
       basicInfo: data
@@ -184,6 +385,7 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
   };
 
   const updateFunctionalRequirements = (data: FormData['functionalRequirements']) => {
+    resetInactivityTimer();
     setFormData(prev => ({
       ...prev,
       functionalRequirements: data
@@ -191,6 +393,7 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
   };
 
   const updateNonFunctionalRequirements = (data: FormData['nonFunctionalRequirements']) => {
+    resetInactivityTimer();
     setFormData(prev => ({
       ...prev,
       nonFunctionalRequirements: data
@@ -198,6 +401,7 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
   };
 
   const updateTechPreferences = (data: FormData['techPreferences']) => {
+    resetInactivityTimer();
     setFormData(prev => ({
       ...prev,
       techPreferences: data
@@ -205,15 +409,99 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
   };
 
   const updateAdditionalContext = (data: FormData['additionalContext']) => {
+    resetInactivityTimer();
     setFormData(prev => ({
       ...prev,
       additionalContext: data
     }));
   };
 
-  // Navegación entre pasos
-  const nextStep = () => {
-    if (currentStep < 6) {
+  // Función para avanzar al siguiente paso
+  const nextStep = async () => {
+    // Si estamos en el paso 1, aseguremos que los datos estén guardados antes de avanzar
+    console.log("..... comienza el nextStep ....");
+    console.log("currentStep:", currentStep);
+    if (currentStep === 1) {
+      console.log("Guardando datos antes de avanzar...");
+      setIsSaving(true);
+      
+      try {
+        const serverData = convertToServerFormat(formData);
+        
+        
+        // Determinar si es una creación o actualización
+        const isNewRequirement = !requirementId || requirementId.trim() === '';
+        console.log("isNewRequirement:", isNewRequirement, requirementId);
+        
+        console.log(`Operación: ${isNewRequirement ? 'CREAR NUEVO' : 'ACTUALIZAR EXISTENTE'} requisito`);
+        console.log(`requirementId actual: ${requirementId || 'ninguno'}`);
+        
+        // Determinar endpoint y método según si tenemos ID o no
+        const endpoint = isNewRequirement 
+          ? '/api/requirements' 
+          : `/api/requirements/${requirementId}`;
+        
+        const method = isNewRequirement ? 'POST' : 'PUT';
+        
+        console.log(`Enviando solicitud ${method} a ${endpoint}`);
+        const response = await fetch(endpoint, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(serverData),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error en la solicitud: ${response.status} ${response.statusText}`);
+        }
+        
+        const responseData = await response.json();
+        console.log(`Respuesta del servidor (${method}):`, responseData);
+        
+        // Actualizar referencias de datos guardados
+        lastSavedDataRef.current = JSON.stringify(formData);
+        setLastSaved(new Date());
+        
+        // Si es nuevo, necesitamos el ID para continuar
+        if (isNewRequirement) {
+          if (!responseData || !responseData._id) {
+            throw new Error("No se recibió un ID válido del servidor");
+          }
+          
+          // Actualizar estado con el nuevo ID
+          const newId = responseData._id;
+          console.log(`Nuevo ID obtenido: ${newId}, actualizando estado...`);
+          
+          // Actualizar estado local
+          setRequirementId(newId);
+          
+          // Actualizar la URL sin recargar
+          window.history.replaceState({}, '', `/dashboard/create?id=${newId}`);
+          
+          // Marcar que se ha creado un nuevo requisito (esto activará el useEffect)
+          setNewRequirementCreated(true);
+          
+          // Ya no avanzamos el paso aquí, lo hará el useEffect cuando detecte el cambio
+          console.log(`Esperando a que el efecto detecte el nuevo requisito y avance al siguiente paso...`);
+        } else {
+          // Para requisitos existentes, simplemente avanzamos al siguiente paso
+          console.log(`Avanzando paso ${currentStep} → ${currentStep + 1}`);
+          setCurrentStep(prevStep => prevStep + 1);
+          
+          // Mostrar confirmación
+          toast.success("Cambios guardados correctamente");
+        }
+        
+      } catch (error) {
+        console.error("Error al guardar datos:", error);
+        toast.error("Error al guardar. Por favor intenta nuevamente.");
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      // Para otros pasos, simplemente avanzar
+      console.log(`Avanzando paso ${currentStep} → ${currentStep + 1}`);
       setCurrentStep(prevStep => prevStep + 1);
     }
   };
@@ -252,11 +540,11 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
         onSubmit(formData);
       } else {
         // Guardar los datos en la base de datos
-        const endpoint = requirementId 
+        const endpoint = requirementId && requirementId.trim() !== '' 
           ? `/api/requirements/${requirementId}` 
           : '/api/requirements';
         
-        const method = requirementId ? 'PUT' : 'POST';
+        const method = requirementId && requirementId.trim() !== '' ? 'PUT' : 'POST';
         
         const response = await fetch(endpoint, {
           method,
@@ -278,6 +566,8 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
       }
       
       setSuccess(true);
+      // Actualizar referencia de últimos datos guardados
+      lastSavedDataRef.current = JSON.stringify(formData);
       toast.success('¡Requisitos guardados con éxito!');
     } catch (error) {
       console.error('Error al enviar el formulario:', error);
@@ -307,114 +597,120 @@ export default function SystemRequirementsForm({ initialData, onSubmit, requirem
     }
   };
 
-  // Si se completó el envío con éxito
+  // Si se completó con éxito, mostrar mensaje y redireccionar
   if (success) {
     return (
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body items-center text-center">
-          <h2 className="card-title text-2xl mb-4">¡Requisitos Enviados con Éxito!</h2>
-          <div className="text-success text-5xl mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <p className="mb-4">Tus requisitos han sido procesados y nuestro sistema está generando el diagrama de arquitectura para tu proyecto.</p>
-          <p className="mb-6">Recibirás una notificación cuando el diagrama esté listo para ser visualizado.</p>
-          <div className="card-actions">
-            <button 
-              className="btn btn-primary"
-              onClick={() => router.push('/dashboard')}
-            >
-              Volver al Dashboard
-            </button>
-          </div>
+      <div className="flex flex-col items-center justify-center text-center p-8">
+        <div className="bg-success/20 p-4 rounded-full mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h3 className="text-2xl font-bold mb-2">¡Requisitos Guardados!</h3>
+        <p className="mb-6 max-w-md">
+          Tus requisitos han sido guardados exitosamente. Ahora puedes generar diagramas o seguir editando.
+        </p>
+        <div className="flex flex-wrap gap-4 justify-center">
+          <button
+            onClick={() => router.push('/dashboard/requirements')}
+            className="btn btn-primary"
+          >
+            Ver Mis Requisitos
+          </button>
+          <button
+            onClick={() => {
+              setSuccess(false);
+              setCurrentStep(1);
+            }}
+            className="btn btn-outline"
+          >
+            Seguir Editando
+          </button>
         </div>
       </div>
     );
   }
 
+  // Renderizar el formulario
   return (
-    <div className="card bg-base-100 shadow-xl">
-      <div className="card-body">
-        <h2 className="card-title text-2xl mb-2">
-          {showConfirmation 
-            ? "Revisar y Confirmar" 
-            : `Paso ${currentStep}: ${getStepTitle(currentStep)}`
-          }
-        </h2>
-        
-        {!showConfirmation && (
-          <div className="w-full mb-6">
-            <ul className="steps steps-horizontal w-full">
-              <li className={`step ${currentStep >= 1 ? 'step-primary' : ''}`}>Información</li>
-              <li className={`step ${currentStep >= 2 ? 'step-primary' : ''}`}>Funcional</li>
-              <li className={`step ${currentStep >= 3 ? 'step-primary' : ''}`}>No Funcional</li>
-              <li className={`step ${currentStep >= 4 ? 'step-primary' : ''}`}>Tecnología</li>
-              <li className={`step ${currentStep >= 5 ? 'step-primary' : ''}`}>Contexto</li>
-              <li className={`step ${currentStep >= 6 ? 'step-primary' : ''}`}>Revisar</li>
-            </ul>
-          </div>
-        )}
-        
-        {/* Indicador de guardado automático */}
-        {session?.user && (
-          <div className="text-xs text-gray-500 mb-2 flex items-center">
-            {isSaving ? (
-              <>
-                <span className="loading loading-spinner loading-xs mr-1"></span>
-                Guardando...
-              </>
-            ) : lastSaved ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Guardado {lastSaved.toLocaleTimeString()}
-              </>
-            ) : (
-              <span>No guardado</span>
-            )}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          {renderStep()}
-          
-          <div className="flex justify-between mt-6">
-            {currentStep > 1 || showConfirmation ? (
-              <button 
-                type="button" 
-                onClick={prevStep}
-                className="btn btn-outline"
-              >
-                {showConfirmation ? "Editar" : "Anterior"}
-              </button>
-            ) : (
-              <div></div> // Placeholder para mantener la alineación
-            )}
-            
-            <button 
-              type={currentStep === 6 || showConfirmation ? "submit" : "button"} 
-              onClick={currentStep < 6 ? nextStep : undefined}
-              className={`btn ${currentStep === 6 || showConfirmation ? 'btn-primary' : 'btn-primary'}`}
-              disabled={isSubmitting}
+    <div>
+      <Suspense fallback={<div>Cargando...</div>}>
+        <GetSearchParams setRequirementId={setRequirementId} />
+      </Suspense>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Indicador de pasos */}
+      <div className="w-full">
+        <ul className="steps steps-horizontal w-full">
+          {[1, 2, 3, 4, 5, 6].map((step) => (
+            <li 
+              key={step}
+              className={`step cursor-pointer ${step <= currentStep ? 'step-primary' : ''}`}
+              onClick={() => goToStep(step)}
             >
-              {isSubmitting ? (
-                <>
-                  <span className="loading loading-spinner"></span>
-                  Enviando...
-                </>
-              ) : showConfirmation ? (
-                "Confirmar y Enviar"
-              ) : currentStep === 6 ? (
-                "Revisar"
-              ) : (
-                "Siguiente"
-              )}
-            </button>
-          </div>
-        </form>
+              {getStepTitle(step)}
+            </li>
+          ))}
+        </ul>
       </div>
+
+      {/* Contenido del paso actual */}
+      <div className="min-h-[400px] py-4">
+        {renderStep()}
+      </div>
+
+      {/* Indicador de autoguardado */}
+      <div className="flex items-center justify-end text-sm text-base-content/60">
+        {isSaving ? (
+          <span className="flex items-center">
+            <span className="loading loading-spinner loading-xs mr-2"></span>
+            Guardando...
+          </span>
+        ) : lastSaved ? (
+          <span>
+            Último guardado: {lastSaved.toLocaleTimeString()}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Botones de navegación */}
+      <div className="flex justify-between">
+        <button 
+          type="button" 
+          onClick={prevStep}
+          className="btn"
+          disabled={currentStep === 1}
+        >
+          Anterior
+        </button>
+        
+        <button 
+          type={currentStep === 6 || showConfirmation ? "submit" : "button"} 
+          onClick={currentStep < 6 ? nextStep : undefined}
+          className={`btn ${currentStep === 6 || showConfirmation ? 'btn-primary' : ''}`}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <span className="loading loading-spinner loading-sm"></span>
+              Guardando...
+            </>
+          ) :(currentStep===1 && !requirementId) ? (
+            'Crear Requisito'
+          ) : currentStep < 6 ? (
+            'Siguiente'
+          ) : showConfirmation ? (
+            'Confirmar y Guardar'
+          ) : (
+            'Revisar y Guardar'
+          )}
+        </button>
+      </div>
+
+      {/* Footer con ayuda */}
+      <div className="text-center text-sm text-base-content/70 pt-6 border-t">
+        ¿Necesitas ayuda? Ponte en contacto con nosotros en <a href="mailto:kodeandoando2023@gmail.com" className="link link-primary">kodeandoando2023@gmail.com</a>
+      </div>
+    </form>
     </div>
   );
 }

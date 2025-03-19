@@ -43,19 +43,30 @@ export default function DiagramGenerator({
       }
       
       await response.json(); // Consumir el cuerpo de la respuesta sin asignarlo a una variable
-      toast.success('Diagramas generados exitosamente', { id: 'generating-diagrams' });
+      toast.success('Generando Diagramas exitosamente', { id: 'generating-diagrams' });
       
       // Actualizar la página para mostrar los diagramas generados
-      router.refresh();
+      //router.refresh();
       
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Error al generar diagramas';
       toast.error(errorMessage, { id: 'generating-diagrams' });
       console.error('Error al generar diagramas:', error);
     } finally {
-      setIsGenerating(false);
+      reloadPageToseeDiagrams();
     }
   };
+
+  const reloadPageToseeDiagrams = () => {
+    //este componente se encarga de recargar la página para ver los diagramas generados
+    //despues de 30 segundos.
+    setTimeout(() => {
+      router.refresh();
+      setIsGenerating(false);
+      toast.success('Si aun no ves los diagramas, recarga la página', { id: 'generating-diagrams' });
+      router.push('/dashboard/requirements/' + requirementId);
+    }, 30000);
+  }
 
   return (
     <div className="bg-base-200 text-base-content p-6 rounded-box shadow">
@@ -111,6 +122,7 @@ export default function DiagramGenerator({
           </svg>
           <p className="text-sm">
             La generación de diagramas puede tomar hasta 30 segundos. Por favor, espera mientras procesamos tu solicitud.
+            Necesitaras recargar la página para ver los diagramas generados, despues de alrededor de 30 segundos...gracias!
           </p>
         </div>
       )}

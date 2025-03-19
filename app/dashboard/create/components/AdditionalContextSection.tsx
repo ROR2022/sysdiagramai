@@ -1,12 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { AdditionalContextSectionProps } from './types';
 
 export default function AdditionalContextSection({ data, updateData }: AdditionalContextSectionProps) {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateData(e.target.value);
   };
+
+  // Nueva función para manejar el evento blur y forzar una actualización inmediata
+  const handleBlur = useCallback((e: React.FocusEvent<HTMLTextAreaElement>) => {
+    console.log(`Campo contexto adicional perdió el foco con valor de longitud:`, e.target.value.length);
+    
+    // Actualizar el estado con el valor actual del DOM
+    updateData(e.target.value);
+  }, [updateData]);
 
   return (
     <div className="space-y-4">
@@ -26,6 +34,7 @@ export default function AdditionalContextSection({ data, updateData }: Additiona
           placeholder="Describe cualquier detalle adicional sobre tu proyecto, como integración con sistemas existentes, requisitos especiales, o contexto que nos ayude a entender mejor tus necesidades..."
           value={data}
           onChange={handleChange}
+          onBlur={handleBlur}
         ></textarea>
         <label className="label">
           <span className="label-text-alt">Opcional: Puedes dejar esto en blanco si no hay contexto adicional</span>
