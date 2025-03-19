@@ -189,6 +189,18 @@ export const SubscriptionService = {
 
     // Crear la sesión de checkout con el ID de cliente válido
     // esta funcion es exportada desde el archivo stripe.ts
+    //crear un punto de revision para el email
+    if (!user?.email) {
+      console.log('subscriptionService: not found email-user:..', user?.email);
+      throw new Error("User email not found");
+    }
+    //crear un regex para validar el email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(user?.email)) {
+      console.log('subscriptionService: not valid email-user:..', user?.email);
+      throw new Error("Invalid email");
+    }
+
     const session = await createCheckoutSession({
       priceId,
       userId,
