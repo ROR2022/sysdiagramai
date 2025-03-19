@@ -57,7 +57,7 @@ export default async function RequirementPage({ params }: PageProps) {
         <DiagramGenerator 
           requirementId={requirement._id?.toString() || ''} 
           status={requirement.status || ''} 
-          hasDiagrams={Array.isArray(requirement.diagramUrls) && requirement.diagramUrls.length > 0} 
+          hasDiagrams={Array.isArray(requirement.diagrams) && requirement.diagrams.length > 0} 
         />
         
         {/* Panel inferior: Visualizador de diagramas */}
