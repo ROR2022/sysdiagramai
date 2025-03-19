@@ -48,6 +48,7 @@ export const authConfig: NextAuthConfig = {
             async authorize(credentials) {
                 try {
                     // Verificar que las credenciales existan
+                    console.log("credentials...", credentials);
                     if (!credentials?.email || !credentials?.password) {
                         return null;
                     }

@@ -64,7 +64,7 @@ export default function DiagramGenerator({
       router.refresh();
       setIsGenerating(false);
       toast.success('Si aun no ves los diagramas, recarga la página', { id: 'generating-diagrams' });
-      router.push('/dashboard/requirements/' + requirementId);
+      router.push('/dashboard/requirements');
     }, 30000);
   }
 
