@@ -1,6 +1,6 @@
-import fs from 'fs';
-import path from 'path';
-import { v4 as uuidv4 } from 'uuid';
+//import fs from 'fs';
+//import path from 'path';
+//import { v4 as uuidv4 } from 'uuid';
 import { ISystemRequirement, DiagramContent } from '../models/systemRequirement';
 import { getSystemRequirementById, updateSystemRequirementById } from '@/app/api/utils/systemRequirement';
 import { generateResponseAI } from '@/app/api/utils/openAI';
@@ -40,10 +40,10 @@ export class DiagramService {
         
         
         // 5. Extraer diferentes diagramas de la respuesta
-        const { diagramUrls, diagrams } = await this.processResponse(response, requirementId);
+        const { diagrams } = await this.processResponse(response, requirementId);
         
         // 6. Actualizar el requisito con los diagramas, contenido completo y estado
-        requirement.diagramUrls = diagramUrls;
+        requirement.diagramUrls = [];
         requirement.diagrams = diagrams;
         requirement.designDocument = response; // Guardar el documento completo
         requirement.status = 'completed';
@@ -152,17 +152,18 @@ INSTRUCCIONES IMPORTANTES:
   private static async processResponse(
     response: string,
     requirementId: string
-  ): Promise<{ diagramUrls: string[], diagrams: DiagramContent[] }> {
+  ): Promise<{ diagrams: DiagramContent[] }> {
     // Dividir la respuesta por separadores
     const sections = response.split('---').filter(section => section.trim() !== '');
     
+    console.log("requirementId...", requirementId);
     // Crear la carpeta para este requisito si no existe
-    const requirementFolder = path.join(process.cwd(), 'uploads', requirementId);
+    /* const requirementFolder = path.join(process.cwd(), 'uploads', requirementId);
     if (!fs.existsSync(requirementFolder)) {
       fs.mkdirSync(requirementFolder, { recursive: true });
-    }
+    } */
     
-    const diagramUrls: string[] = [];
+    //const diagramUrls: string[] = [];
     const diagrams: DiagramContent[] = [];
     
     // Procesar cada sección como un diagrama diferente
@@ -173,24 +174,24 @@ INSTRUCCIONES IMPORTANTES:
       const diagramContent = this.extractDiagramContent(section);
       
       // Generar nombre único para el archivo
-      const fileName = `diagram_${i + 1}_${uuidv4().slice(0, 8)}.md`;
-      const filePath = path.join(requirementFolder, fileName);
+      //const fileName = `diagram_${i + 1}_${uuidv4().slice(0, 8)}.md`;
+      //const filePath = path.join(requirementFolder, fileName);
       
       // Guardar el contenido del diagrama en un archivo
-      fs.writeFileSync(filePath, section);
+      //fs.writeFileSync(filePath, section);
       
       // Crear la URL relativa para acceder al diagrama
-      const fileUrl = `/uploads/${requirementId}/${fileName}`;
-      diagramUrls.push(fileUrl);
+      //const fileUrl = `/uploads/${requirementId}/${fileName}`;
+      //diagramUrls.push(fileUrl);
       
       // Almacenar el contenido estructurado con la URL
       diagrams.push({
         ...diagramContent,
-        url: fileUrl
+        url: '' //fileUrl
       });
     }
     
-    return { diagramUrls, diagrams };
+    return { diagrams };
   }
 
   /**
