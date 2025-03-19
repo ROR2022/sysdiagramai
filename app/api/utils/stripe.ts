@@ -81,6 +81,22 @@ export async function createCheckoutSession({
 }) {
   // Obtener o crear el cliente
   //const customer = await getOrCreateCustomer(email, userId);
+  //validar si el email es valido
+  if (!email) {
+    console.log('email-user:..', email);
+    throw new Error('Email is required');
+  }
+  //crear un regex para validar el email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    console.log('email-user:..', email);
+    throw new Error('Invalid email');
+  }
+
+  //si llegamos a este punto, el email es valido
+  console.log('email-user:..', email);
+  
+  
   /*
   
 
