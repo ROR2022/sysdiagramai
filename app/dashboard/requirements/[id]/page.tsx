@@ -37,6 +37,7 @@ export default async function RequirementPage({ params }: PageProps) {
       notFound();
     }
     requirement = await getRequirementById(id, session.user.id as string);
+    //console.log("requirement...", requirement);
   } catch (error) {
     console.error('Error al obtener el requisito:', error);
     notFound();
@@ -60,9 +61,9 @@ export default async function RequirementPage({ params }: PageProps) {
         />
         
         {/* Panel inferior: Visualizador de diagramas */}
-        {requirement.diagramUrls && requirement.diagramUrls.length > 0 && (
+        {requirement.diagrams && requirement.diagrams.length > 0 && (
           <DiagramViewer 
-            diagramUrls={requirement.diagramUrls} 
+            diagramUrls={requirement.diagramUrls || []} 
             diagrams={requirement.diagrams} 
             requirementId={requirement._id?.toString() || ''}
           />
