@@ -201,6 +201,9 @@ export const SubscriptionService = {
       throw new Error("Invalid email");
     }
 
+    //si llegamos a este punto, el email es valido
+    console.log('subscriptionService: valid email-user:..', user?.email);
+
     const session = await createCheckoutSession({
       priceId,
       userId,
