@@ -293,8 +293,13 @@ export const SubscriptionService = {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+
+        console.log("subscriptionService: session", session);
+
         userId = session.metadata?.userId || event.data.object.client_reference_id || undefined;
         const userEmail = session.customer_details?.email || session.customer_email || undefined;
+      
+
 
         if (!userId) {
           console.error("No userId found in session metadata");
