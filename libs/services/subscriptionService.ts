@@ -7,7 +7,7 @@ import {
   updateSubscriptionByUserId,
   getSubscriptionByStripeCustomerId,
 } from "@/app/api/utils/subscription";
-import { getUserById } from "@/app/api/utils/users";
+import { getUserByEmail, getUserById } from "@/app/api/utils/users";
 import {
   createCustomerByUserId,
   createCustomerByUserIdAndEmail,
@@ -18,6 +18,9 @@ import {
   getStripeSubscriptionByEmail,
   getStripeSubscriptionByIdUser,
 } from "@/app/api/utils/stripe";
+
+// Importar el objeto stripe para la nueva estrategia de búsqueda
+import { stripe } from "@/app/api/utils/stripe";
 
 // Servicio para manejar las operaciones con las suscripciones
 export const SubscriptionService = {
@@ -195,18 +198,25 @@ export const SubscriptionService = {
     //crear un regex para validar el email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!user?.email || !emailRegex.test(user?.email)) {
-      console.log("subscriptionService: not found or not valid email-user:..", user?.email);
+      console.log(
+        "subscriptionService: not found or not valid email-user:..",
+        user?.email
+      );
       //throw new Error("User email not found or not valid");
       //recuperar el email del usuario
-      console.log("subscriptionService: recuperando email del usuario:..", userId);
-       user = await getUserById(userId);
+      console.log(
+        "subscriptionService: recuperando email del usuario:..",
+        userId
+      );
+      user = await getUserById(userId);
       if (!user?.email) {
-        console.log("subscriptionService: no se encontro email del usuario:..", userId);
+        console.log(
+          "subscriptionService: no se encontro email del usuario:..",
+          userId
+        );
         throw new Error("User email not found");
       }
     }
-
-    
 
     //si llegamos a este punto, el email es valido
     console.log("subscriptionService: valid email-user:..", user?.email);
@@ -288,56 +298,104 @@ export const SubscriptionService = {
    */
   async handleStripeEvent(event: Stripe.Event): Promise<ISubscription | null> {
     let subscription: ISubscription | null = null;
-    let userId: string | undefined;
+    //let userId: string | undefined;
 
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-
         console.log("subscriptionService: session", session);
 
-        userId = session.metadata?.userId || event.data.object.client_reference_id || undefined;
-        const userEmail = session.customer_details?.email || session.customer_email || undefined;
-      
-
-
-        if (!userId) {
-          console.error("No userId found in session metadata");
+        // Extraer información del usuario y su email
+        let userId = session.metadata?.userId || session.client_reference_id;
+        const userEmail = session.customer_details?.email || session.customer_email;
+        const stripeCustomerId = session.customer as string;
+        
+        // Validar que tenemos información para identificar al usuario
+        if (!userId && !userEmail && !stripeCustomerId) {
+          console.error("No se puede identificar al usuario en la sesión de checkout");
           return null;
         }
-
-        /* const stripeSubscription = await getStripeSubscriptionById(
-          session.subscription as string
-        ); */
-        let stripeSubscription: Stripe.Subscription | null = null;
-        //ahora vamos a intentar obtener la suscripcion de stripe con cada uno de los metodos posibles
-        //primero intentamos obtener la suscripcion con el id de la suscripcion
-        stripeSubscription = await getStripeSubscriptionById(
-          session.subscription as string
-        );
-        if (!stripeSubscription) {
-          console.log("subscriptionService: no se encontro la suscripcion con el id de la suscripcion", session.subscription);
-          //ahora intentamos obtener la suscripcion con el email del usuario
-          stripeSubscription = await getStripeSubscriptionByEmail(userEmail as string);
-          if (!stripeSubscription) {
-            console.log("subscriptionService: no se encontro la suscripcion con el email del usuario", userEmail);
-            //ahora intentamos obtener la suscripcion con el id del usuario 
-            stripeSubscription = await getStripeSubscriptionByIdUser(userId);
-            if (!stripeSubscription) {
-              console.log("subscriptionService: no se encontro la suscripcion con el id del usuario", userId);
-              throw new Error("subscriptionService: No subscription found");
+        
+        // Si no tenemos userId pero tenemos email, intentar encontrar el usuario
+        if (!userId && userEmail) {
+          try {
+            const user = await getUserByEmail(userEmail);
+            if (user) {
+              userId = user._id.toString();
+              console.log(`Usuario encontrado por email: ${userEmail}, userId: ${userId}`);
             }
+          } catch (error) {
+            console.error(`Error buscando usuario por email ${userEmail}:`, error);
           }
         }
         
+        // Si todavía no tenemos userId pero tenemos customerId, buscar por este
+        if (!userId && stripeCustomerId) {
+          try {
+            const existingSubscription = await getSubscriptionByStripeCustomerId(stripeCustomerId);
+            if (existingSubscription) {
+              userId = existingSubscription.userId;
+              console.log(`Usuario encontrado por stripeCustomerId: ${stripeCustomerId}, userId: ${userId}`);
+            }
+          } catch (error) {
+            console.error(`Error buscando suscripción por stripeCustomerId ${stripeCustomerId}:`, error);
+          }
+        }
         
+        // Verificar si finalmente tenemos un userId
+        if (!userId) {
+          console.error("No userId found in session metadata or through alternative methods");
+          return null;
+        }
 
+        // Estrategia para obtener la suscripción de Stripe
+        let stripeSubscription: Stripe.Subscription | null = null;
+        
+        // 1. Intentar obtener la suscripción con el id de la suscripción de la sesión
+        if (session.subscription) {
+          try {
+            stripeSubscription = await getStripeSubscriptionById(session.subscription as string);
+            console.log("Suscripción de Stripe encontrada por ID:", session.subscription);
+          } catch (error) {
+            console.log("Error obteniendo suscripción por ID:", error);
+          }
+        }
+        
+        // 2. Si no se encuentra, intentar con el email del usuario
+        if (!stripeSubscription && userEmail) {
+          try {
+            stripeSubscription = await getStripeSubscriptionByEmail(userEmail);
+            console.log("Suscripción de Stripe encontrada por email:", userEmail);
+          } catch (error) {
+            console.log("Error obteniendo suscripción por email:", error);
+          }
+        }
+        
+        // 3. Si todavía no se encuentra, intentar con el ID del usuario
+        if (!stripeSubscription) {
+          try {
+            stripeSubscription = await getStripeSubscriptionByIdUser(userId);
+            console.log("Suscripción de Stripe encontrada por userId:", userId);
+          } catch (error) {
+            console.log("Error obteniendo suscripción por userId:", error);
+          }
+        }
+        
+        // Verificar si finalmente tenemos una suscripción de Stripe
+        if (!stripeSubscription) {
+          console.error("No se pudo encontrar la suscripción de Stripe");
+          return null;
+        }
+
+        // Procesar la información de la suscripción
         const plan = this.getPlanFromProductId(
           stripeSubscription.items.data[0].price.product as string
         );
         const limit = this.getLimitFromPlan(plan);
 
+        // Actualizar la suscripción en nuestra base de datos
         subscription = await this.updateSubscription(userId, {
+          stripeCustomerId,
           stripeSubscriptionId: stripeSubscription.id,
           plan,
           status: stripeSubscription.status as
@@ -358,10 +416,76 @@ export const SubscriptionService = {
       case "customer.subscription.updated": {
         const stripeSubscription = event.data.object as Stripe.Subscription;
         const stripeCustomerId = stripeSubscription.customer as string;
+        let subscriptionUserId = stripeSubscription.metadata?.userId;
 
-        const existingSubscription = await getSubscriptionByStripeCustomerId(
-          stripeCustomerId
-        );
+        // Estrategia de búsqueda escalonada
+        let existingSubscription = null;
+
+        // 1. Intentar encontrar por stripeCustomerId (método original)
+        try {
+          existingSubscription = await getSubscriptionByStripeCustomerId(
+            stripeCustomerId
+          );
+        } catch (error) {
+          console.log(
+            "Error buscando suscripción por stripeCustomerId:",
+            error
+          );
+        }
+
+        // 2. Si no se encuentra y tenemos userId en los metadatos, buscar por userId
+        if (!existingSubscription && subscriptionUserId) {
+          try {
+            existingSubscription = await getSubscriptionByUserId(
+              subscriptionUserId
+            );
+            console.log("Suscripción encontrada por userId de metadatos");
+          } catch (error) {
+            console.log("Error buscando suscripción por userId:", error);
+          }
+        }
+
+        // 3. Si aún no se encuentra, intentar obtener el cliente de Stripe para conseguir más información
+        if (!existingSubscription) {
+          try {
+            // Obtener el cliente de Stripe para obtener más información
+            const customer = await stripe.customers.retrieve(stripeCustomerId);
+
+            if ("email" in customer && customer.email) {
+              // Para este caso, como no tenemos función getUserByEmail, obtenemos todos los usuarios
+              // y filtramos por email manualmente, o usamos alguna otra consulta que ya exista
+              // Esta parte requiere ajustes según tu base de datos
+              console.log("Buscando usuario por email:", customer.email);
+
+              // Alternativa: usar directamente el ID del cliente de Stripe para buscar la suscripción
+              // esto asume que el campo stripeCustomerId existe en tu esquema de suscripción
+              try {
+                // Intentar una última búsqueda por customerId en la colección
+                // Esta implementación depende de tu estructura de datos
+                // aqui primero obtenemos el usuario en base al customer.email
+                const user = await getUserByEmail(customer.email as string);
+                console.log(
+                  "Buscando suscripción alternativa para cliente:",
+                  stripeCustomerId
+                );
+                if (user) {
+                  subscriptionUserId = user._id.toString();
+                  //ahora obtenemos la suscripcion en base al userId
+                  existingSubscription = await getSubscriptionByUserId(
+                    subscriptionUserId as string
+                  );
+                }
+              } catch (findError) {
+                console.log("Error en búsqueda alternativa:", findError);
+              }
+            }
+          } catch (error) {
+            console.log(
+              "Error al intentar métodos alternativos de búsqueda:",
+              error
+            );
+          }
+        }
 
         if (!existingSubscription) {
           console.error(
@@ -371,26 +495,38 @@ export const SubscriptionService = {
           return null;
         }
 
-        userId = existingSubscription.userId;
+        // Si no tenemos userId de los metadatos, usamos el de la suscripción existente
+        if (!subscriptionUserId && existingSubscription.userId) {
+          subscriptionUserId = existingSubscription.userId;
+        }
+
+        // Si después de todo no tenemos un userId, no podemos continuar
+        if (!subscriptionUserId) {
+          console.error("No userId found for subscription update");
+          return null;
+        }
 
         const plan = this.getPlanFromProductId(
           stripeSubscription.items.data[0].price.product as string
         );
         const limit = this.getLimitFromPlan(plan);
 
-        subscription = await this.updateSubscription(userId as string, {
-          plan,
-          status: stripeSubscription.status as
-            | "active"
-            | "trialing"
-            | "canceled"
-            | "past_due"
-            | "incomplete",
-          currentPeriodEnd: new Date(
-            stripeSubscription.current_period_end * 1000
-          ),
-          diagramsLimit: limit,
-        });
+        subscription = await this.updateSubscription(
+          subscriptionUserId as string,
+          {
+            plan,
+            status: stripeSubscription.status as
+              | "active"
+              | "trialing"
+              | "canceled"
+              | "past_due"
+              | "incomplete",
+            currentPeriodEnd: new Date(
+              stripeSubscription.current_period_end * 1000
+            ),
+            diagramsLimit: limit,
+          }
+        );
 
         break;
       }
@@ -398,26 +534,73 @@ export const SubscriptionService = {
       case "customer.subscription.deleted": {
         const stripeSubscription = event.data.object as Stripe.Subscription;
         const stripeCustomerId = stripeSubscription.customer as string;
+        let subscriptionUserId = stripeSubscription.metadata?.userId;
 
-        const existingSubscription = await getSubscriptionByStripeCustomerId(
-          stripeCustomerId
-        );
+        // Estrategia de búsqueda escalonada
+        let existingSubscription = null;
+        
+        // 1. Intentar encontrar por stripeCustomerId (método original)
+        try {
+          existingSubscription = await getSubscriptionByStripeCustomerId(stripeCustomerId);
+        } catch (error) {
+          console.log("Error buscando suscripción por stripeCustomerId:", error);
+        }
+        
+        // 2. Si no se encuentra y tenemos userId en los metadatos, buscar por userId
+        if (!existingSubscription && subscriptionUserId) {
+          try {
+            existingSubscription = await getSubscriptionByUserId(subscriptionUserId);
+            console.log("Suscripción encontrada por userId de metadatos");
+          } catch (error) {
+            console.log("Error buscando suscripción por userId:", error);
+          }
+        }
+        
+        // 3. Si aún no se encuentra, intentar obtener el cliente de Stripe para conseguir más información
+        if (!existingSubscription) {
+          try {
+            // Obtener el cliente de Stripe para obtener más información
+            const customer = await stripe.customers.retrieve(stripeCustomerId);
+            
+            if ('email' in customer && customer.email) {
+              try {
+                // Buscar usuario por email y luego su suscripción
+                const user = await getUserByEmail(customer.email as string);
+                if (user) {
+                  subscriptionUserId = user._id.toString();
+                  existingSubscription = await getSubscriptionByUserId(subscriptionUserId);
+                  console.log("Suscripción encontrada por email del cliente Stripe");
+                }
+              } catch (findError) {
+                console.log("Error en búsqueda alternativa:", findError);
+              }
+            }
+          } catch (error) {
+            console.log("Error al intentar métodos alternativos de búsqueda:", error);
+          }
+        }
 
         if (!existingSubscription) {
-          console.error(
-            "No subscription found for customer:",
-            stripeCustomerId
-          );
+          console.error("No subscription found for customer:", stripeCustomerId);
           return null;
         }
 
-        userId = existingSubscription.userId;
+        // Si no tenemos userId de los metadatos, usamos el de la suscripción existente
+        if (!subscriptionUserId && existingSubscription.userId) {
+          subscriptionUserId = existingSubscription.userId;
+        }
 
-        subscription = await this.updateSubscription(userId as string, {
+        // Si después de todo no tenemos un userId, no podemos continuar
+        if (!subscriptionUserId) {
+          console.error("No userId found for subscription deletion");
+          return null;
+        }
+
+        subscription = await this.updateSubscription(subscriptionUserId, {
           plan: "free",
           status: "canceled",
           stripeSubscriptionId: undefined,
-          diagramsLimit: 5,
+          diagramsLimit: 3,
         });
 
         break;
