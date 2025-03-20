@@ -119,14 +119,15 @@ export default function BlogPostPage() {
   const [loading, setLoading] = useState(true);
   const [noPost, setNoPost] = useState(false);
 
-  const goBlog = () => {
-    setTimeout(() => {
-      setNoPost(false);
-      router.push("/blog");
-    }, 5000);
-  };
-
   useEffect(() => {
+    // Función para redirigir al blog después de 5 segundos
+    const goBlog = () => {
+      setTimeout(() => {
+        setNoPost(false);
+        router.push("/blog");
+      }, 5000);
+    };
+
     // En una implementación real, esto sería una llamada a una API o base de datos
     console.log("Buscando Slug:", slug);
     const foundPost = SAMPLE_BLOG_POSTS.find((p) => p.slug === slug);
@@ -142,7 +143,7 @@ export default function BlogPostPage() {
       setNoPost(true);
       goBlog();
     }
-  }, [slug]);
+  }, [slug, router]);
 
   if (loading) {
     return (

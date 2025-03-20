@@ -129,7 +129,7 @@ export default function BlogPage() {
     
     setFilteredPosts(filtered);
     setCurrentPage(page);
-  }, [searchParams]);
+  }, [searchParams, page, search]);
   
   // Calcular posts para la página actual
   const indexOfLastPost = currentPage * postsPerPage;

@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import CancelSubscriptionModal from './CancelSubscriptionModal';
 
 interface Subscription {
@@ -108,11 +106,6 @@ export default function CurrentSubscription({
     if (usagePercentage >= 90) return "bg-error";
     if (usagePercentage >= 70) return "bg-warning";
     return "bg-success";
-  };
-
-  // Manejar la cancelación de la suscripción
-  const handleCancelClick = () => {
-    setShowCancelModal(true);
   };
 
   // Confirmar la cancelación
@@ -297,7 +290,7 @@ export default function CurrentSubscription({
                       
                       {!isPlanCanceled && (
                         <button
-                          onClick={onCancel}
+                          onClick={() => setShowCancelModal(true)}
                           className="btn btn-sm btn-error btn-outline w-full"
                           disabled={canceling}
                         >
@@ -348,4 +341,4 @@ export default function CurrentSubscription({
       />
     </>
   );
-} 
+}

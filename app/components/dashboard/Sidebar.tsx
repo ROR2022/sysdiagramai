@@ -122,6 +122,14 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const { data: session } = useSession();
   const { subscription, loading: loadingSubscription } = useSubscription();
 
+  // Log para depuración
+  console.log('[Sidebar] Subscription rendering conditions:', {
+    loadingSubscription,
+    hasSubscription: !!subscription,
+    isOpen,
+    plan: subscription?.plan
+  });
+
   return (
     <>
       {/* Overlay para dispositivos móviles */}
@@ -195,8 +203,8 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           </div>
 
           {/* Información de suscripción */}
-          {!loadingSubscription && subscription && isOpen && (
-            <div className="px-4 pb-2">
+          {!loadingSubscription && subscription && (
+            <div className={`px-4 pb-2 ${isOpen ? "" : "hidden lg:block"}`}>
               <SubscriptionNav />
             </div>
           )}
