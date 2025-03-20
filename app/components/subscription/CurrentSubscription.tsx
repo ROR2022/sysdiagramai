@@ -8,7 +8,7 @@ interface Subscription {
   stripeCustomerId: string;
   stripeSubscriptionId?: string;
   plan: 'free' | 'pro' | 'team';
-  status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete';
+  status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete' | 'processing';
   currentPeriodEnd?: string;
   diagramsUsed: number;
   diagramsLimit: number;
@@ -159,6 +159,12 @@ export default function CurrentSubscription({
               <span className="badge badge-error gap-1">
                 <span className="h-2 w-2 rounded-full bg-error-content"></span>
                 Pago pendiente
+              </span>
+            )}
+            {subscription.status === 'processing' && (
+              <span className="badge badge-info gap-1">
+                <span className="h-2 w-2 rounded-full bg-info-content"></span>
+                Procesando
               </span>
             )}
           </div>
