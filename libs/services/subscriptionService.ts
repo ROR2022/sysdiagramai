@@ -15,6 +15,8 @@ import {
   createBillingPortalSession,
   cancelSubscriptionAtPeriodEnd,
   getStripeSubscriptionById,
+  getStripeSubscriptionByEmail,
+  getStripeSubscriptionByIdUser,
 } from "@/app/api/utils/stripe";
 
 // Servicio para manejar las operaciones con las suscripciones
@@ -291,16 +293,39 @@ export const SubscriptionService = {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        userId = session.metadata?.userId;
+        userId = session.metadata?.userId || event.data.object.client_reference_id || undefined;
+        const userEmail = session.customer_details?.email || session.customer_email || undefined;
 
         if (!userId) {
           console.error("No userId found in session metadata");
           return null;
         }
 
-        const stripeSubscription = await getStripeSubscriptionById(
+        /* const stripeSubscription = await getStripeSubscriptionById(
+          session.subscription as string
+        ); */
+        let stripeSubscription: Stripe.Subscription | null = null;
+        //ahora vamos a intentar obtener la suscripcion de stripe con cada uno de los metodos posibles
+        //primero intentamos obtener la suscripcion con el id de la suscripcion
+        stripeSubscription = await getStripeSubscriptionById(
           session.subscription as string
         );
+        if (!stripeSubscription) {
+          console.log("subscriptionService: no se encontro la suscripcion con el id de la suscripcion", session.subscription);
+          //ahora intentamos obtener la suscripcion con el email del usuario
+          stripeSubscription = await getStripeSubscriptionByEmail(userEmail as string);
+          if (!stripeSubscription) {
+            console.log("subscriptionService: no se encontro la suscripcion con el email del usuario", userEmail);
+            //ahora intentamos obtener la suscripcion con el id del usuario 
+            stripeSubscription = await getStripeSubscriptionByIdUser(userId);
+            if (!stripeSubscription) {
+              console.log("subscriptionService: no se encontro la suscripcion con el id del usuario", userId);
+              throw new Error("subscriptionService: No subscription found");
+            }
+          }
+        }
+        
+        
 
         const plan = this.getPlanFromProductId(
           stripeSubscription.items.data[0].price.product as string

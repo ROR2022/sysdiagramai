@@ -192,3 +192,51 @@ export async function getStripeSubscriptionById(subscriptionId: string) {
   return stripe.subscriptions.retrieve(subscriptionId) as unknown as Stripe.Subscription;
 }
 
+// funcion para recuperar una suscripcion por el email del usuario
+export async function getStripeSubscriptionByEmail(email: string) {
+  // Primero obtener el customer por email
+  const customers = await stripe.customers.list({ email });
+  
+  if (customers.data.length === 0) {
+    return [] as unknown as Stripe.Subscription[];
+  }
+  
+  // Luego obtener las suscripciones para ese customer
+  const customerIds = customers.data.map(customer => customer.id);
+  const subscriptions = await Promise.all(
+    customerIds.map(id => stripe.subscriptions.list({ customer: id }))
+  );
+  
+  // Aplanar los resultados
+  const list = subscriptions.flatMap(sub => sub.data) as unknown as Stripe.Subscription[];
+  //checar si list[0] es un array
+  if(Array.isArray(list[0])) {
+    //retornar el primer elemento de la lista
+    return list[0][0];
+  }
+  return list[0];
+}
+
+// funcion para recuperar una suscripcion por el id del usuario (client_reference_id)
+export async function getStripeSubscriptionByIdUser(userId: string) {
+  const list= await stripe.subscriptions.list({ 
+    expand: ['data.customer'],
+    limit: 100
+  }).then(subscriptions => {
+    return subscriptions.data.filter(sub => 
+      sub.metadata && sub.metadata.userId === userId
+    );
+  }) as unknown as Stripe.Subscription[];
+  return list[0];
+}
+
+
+
+
+
+
+
+
+
+
+
