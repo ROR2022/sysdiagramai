@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import './globals.css';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
-import "./globals.css";
+import { SubscriptionProvider } from './context/SubscriptionContext';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -12,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "SysDiagramAI - Diagramas de Arquitectura Inteligentes",
-  description: "Genera diagramas de arquitectura y modelos de datos usando inteligencia artificial",
+  title: 'SysDiagramAI - Diagramas de Arquitectura Inteligentes',
+  description: 'Genera diagramas de arquitectura y modelos de datos usando inteligencia artificial',
 };
 
 export default function RootLayout({
@@ -23,30 +24,30 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" data-theme="light">
-      <body
-        className={`${inter.className} min-h-screen`}
-      >
-        {children}
-        <Toaster 
-          position="top-right"
-          toastOptions={{
-            duration: 5000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
+      <body className={`${inter.className} min-h-screen`}>
+        <SubscriptionProvider>
+          {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 5000,
               style: {
-                background: '#059669',
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              style: {
-                background: '#DC2626',
+              success: {
+                style: {
+                  background: '#059669',
+                },
               },
-            },
-          }}
-        />
+              error: {
+                style: {
+                  background: '#DC2626',
+                },
+              },
+            }}
+          />
+        </SubscriptionProvider>
       </body>
     </html>
   );

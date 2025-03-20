@@ -1,80 +1,61 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useSubscription } from '@/app/context/SubscriptionContext';
 
-interface SubscriptionNavProps {
-  currentPlan?: string;
-  diagramsUsed?: number;
-  diagramsLimit?: number;
-}
+export default function SubscriptionNav() {
+  const { subscription, loading } = useSubscription();
 
-export default function SubscriptionNav({ 
-  currentPlan = 'free', 
-  diagramsUsed = 0, 
-  diagramsLimit = 5 
-}: SubscriptionNavProps) {
-  const pathname = usePathname();
-  const isActive = pathname === '/subscription';
-  
-  // Calcular el porcentaje de uso
+  // Renderizar un skeleton mientras carga
+  if (loading) {
+    return (
+      <div className="flex flex-col w-full gap-2 animate-pulse">
+        <div className="h-4 bg-base-300 rounded-full w-24"></div>
+        <div className="h-2 bg-base-300 rounded-full w-full"></div>
+        <div className="w-full bg-base-300 rounded-full h-2"></div>
+      </div>
+    );
+  }
+
+  // Si no hay suscripción, no renderizar nada
+  if (!subscription) {
+    return null;
+  }
+
   const usagePercentage = Math.min(
-    Math.round((diagramsUsed / diagramsLimit) * 100),
+    Math.round((subscription.diagramsUsed / subscription.diagramsLimit) * 100),
     100
   );
-  
-  // Determinar el color de la barra de progreso
-  const getProgressColor = (percentage: number) => {
-    if (percentage < 70) return 'bg-success';
-    if (percentage < 90) return 'bg-warning';
-    return 'bg-error';
-  };
-  
-  // Formatear el nombre del plan
-  const formatPlan = (plan: string) => {
-    switch (plan) {
-      case 'free':
-        return 'Gratuito';
-      case 'pro':
-        return 'Pro';
-      case 'team':
-        return 'Equipo';
-      default:
-        return plan.charAt(0).toUpperCase() + plan.slice(1);
-    }
-  };
 
   return (
-    <Link 
-      href="/subscription" 
-      className={`flex text-base-content items-center p-2 rounded-lg transition-colors ${
-        isActive ? 'bg-primary/10' : 'hover:bg-base-200'
-      }`}
-    >
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-sm font-medium">
-            Plan {formatPlan(currentPlan)}
-          </span>
-          <span className="text-xs text-base-content/70">
-            {diagramsUsed}/{diagramsLimit}
-          </span>
-        </div>
-        <div className="w-full bg-base-300 rounded-full h-1.5">
-          <div
-            className={`h-1.5 rounded-full ${getProgressColor(usagePercentage)}`}
-            style={{ width: `${usagePercentage}%` }}
-          ></div>
-        </div>
+    <div className="w-full text-base-content">
+      <Link href="/subscription" className="link link-hover text-xs font-medium mb-1 block">
+        {subscription.plan === 'free' ? 'Plan Gratuito' : `Plan ${subscription.plan.charAt(0).toUpperCase() + subscription.plan.slice(1)}`}
+      </Link>
+
+      <div className="flex justify-between items-center text-xs mb-1">
+        <span>Diagramas</span>
+        <span className="font-medium">
+          {subscription.diagramsUsed} / {subscription.diagramsLimit}
+        </span>
       </div>
-      <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        className="h-5 w-5 ml-2 text-base-content/50" 
-        viewBox="0 0 20 20" 
-        fill="currentColor"
-      >
-        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-      </svg>
-    </Link>
+
+      <div className="w-full bg-base-300 rounded-full h-1.5 mb-1">
+        <div
+          className={`h-1.5 rounded-full ${
+            usagePercentage < 70
+              ? 'bg-success'
+              : usagePercentage < 90
+              ? 'bg-warning'
+              : 'bg-error'
+          }`}
+          style={{ width: `${usagePercentage}%` }}
+        ></div>
+      </div>
+
+      <div className="text-xs opacity-70">
+        {subscription.diagramsLimit - subscription.diagramsUsed} disponibles
+      </div>
+    </div>
   );
 } 

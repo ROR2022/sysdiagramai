@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useSubscription } from '@/app/context/SubscriptionContext';
 import SubscriptionNav from "../subscription/SubscriptionNav";
 
 // Definimos los elementos de navegación
@@ -120,32 +120,7 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [subscription, setSubscription] = useState<{
-    plan: string;
-    diagramsUsed: number;
-    diagramsLimit: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Obtener la información de la suscripción
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      try {
-        const response = await fetch('/api/subscription');
-        
-        if (response.ok) {
-          const data = await response.json();
-          setSubscription(data);
-        }
-      } catch (error) {
-        console.error('Error fetching subscription:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchSubscription();
-  }, []);
+  const { subscription, loading: loadingSubscription } = useSubscription();
 
   return (
     <>
@@ -220,13 +195,9 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           </div>
 
           {/* Información de suscripción */}
-          {!loading && subscription && isOpen && (
+          {!loadingSubscription && subscription && isOpen && (
             <div className="px-4 pb-2">
-              <SubscriptionNav 
-                currentPlan={subscription.plan}
-                diagramsUsed={subscription.diagramsUsed}
-                diagramsLimit={subscription.diagramsLimit}
-              />
+              <SubscriptionNav />
             </div>
           )}
 
@@ -262,7 +233,7 @@ export default function Sidebar({ isOpen, toggleSidebar }: SidebarProps) {
           {/* Footer del sidebar */}
           <div className="p-4 border-t border-base-200">
             {/* Botón de actualización para usuarios con plan gratuito */}
-            {!loading && subscription && subscription.plan === 'free' && isOpen && (
+            {!loadingSubscription && subscription && subscription.plan === 'free' && isOpen && (
               <Link 
                 href="/subscription"
                 className="flex items-center w-full p-3 mb-2 rounded-lg text-primary hover:bg-base-200 transition-colors"

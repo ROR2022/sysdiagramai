@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
@@ -35,12 +35,22 @@ export default function DiagramGenerator({
   const [lastLog, setLastLog] = useState<string>('');
   const [progress, setProgress] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  // Añadir un ref para rastrear si ya se mostró la notificación de éxito
+  const successNotificationShown = useRef<boolean>(false);
+  // Añadir un ref para rastrear si ya se completó la generación
+  const generationCompleted = useRef<boolean>(hasDiagrams || status === 'completed');
   
   // Determinar si el botón debe estar deshabilitado
   const isButtonDisabled = isGenerating || status === 'generating';
 
   // Función para consultar el estado de generación
   const checkGenerationStatus = async () => {
+    // Si ya se completó la generación, no hacer nada
+    if (generationCompleted.current && !isGenerating) {
+      clearPollingInterval();
+      return;
+    }
+
     try {
       console.log(`Consultando estado para el requisito: ${requirementId}`);
       const response = await fetch(`/api/diagrams/status?requirementId=${requirementId}`);
@@ -94,7 +104,14 @@ export default function DiagramGenerator({
       // Actualizar estado de generación
       if (statusData.status === 'completed') {
         setIsGenerating(false);
-        toast.success('¡Diagramas generados correctamente!');
+        generationCompleted.current = true;
+        
+        // Solo mostrar la notificación de éxito si no se ha mostrado antes
+        if (!successNotificationShown.current) {
+          toast.success('¡Diagramas generados correctamente!');
+          successNotificationShown.current = true;
+        }
+        
         clearPollingInterval();
         router.refresh();
       } else if (statusData.status === 'failed' || statusData.status === 'timeout') {
@@ -121,6 +138,11 @@ export default function DiagramGenerator({
 
   // Efecto para iniciar el polling cuando se está generando
   useEffect(() => {
+    // Si los diagramas ya están generados o el estado es "completed", no iniciar polling
+    if (generationCompleted.current && !isGenerating) {
+      return;
+    }
+    
     if (isGenerating && !pollingInterval) {
       // Verificar inmediatamente
       checkGenerationStatus();
@@ -144,6 +166,10 @@ export default function DiagramGenerator({
       setError(null);
       setProgress(0);
       setLastLog('Iniciando generación de diagramas...');
+      // Reiniciar el estado de notificación
+      successNotificationShown.current = false;
+      generationCompleted.current = false;
+      
       toast.loading('Iniciando generación de diagramas...', { id: 'generating-diagrams' });
       
       // Inicializar el estado de generación antes de comenzar

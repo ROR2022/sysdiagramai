@@ -7,12 +7,13 @@ export interface ISubscription {
   stripeCustomerId: string;
   stripeSubscriptionId?: string;
   plan: 'free' | 'pro' | 'team';
-  status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete';
+  status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'incomplete' | 'processing';
   currentPeriodEnd?: Date;
   diagramsUsed: number;
   diagramsLimit: number;
   created?: Date;
   updated?: Date;
+  lastPaymentAttempt?: Date; // Nueva propiedad para rastrear intentos de pago
 }
 
 // Schema de Mongoose
@@ -39,7 +40,7 @@ const SubscriptionSchema = new Schema<ISubscription>({
   },
   status: { 
     type: String, 
-    enum: ['active', 'trialing', 'canceled', 'past_due', 'incomplete'],
+    enum: ['active', 'trialing', 'canceled', 'past_due', 'incomplete', 'processing'],
     default: 'active'
   },
   currentPeriodEnd: { 
@@ -60,6 +61,9 @@ const SubscriptionSchema = new Schema<ISubscription>({
   updated: { 
     type: Date, 
     default: Date.now 
+  },
+  lastPaymentAttempt: {
+    type: Date
   }
 }, {
   timestamps: { 
@@ -91,4 +95,4 @@ SubscriptionSchema.methods.resetDiagramsUsed = function() {
 
 // Creamos el modelo si no existe (evita errores en hot reload)
 export const Subscription = mongoose.models.Subscription || 
-  mongoose.model<ISubscription>("Subscription", SubscriptionSchema); 
+  mongoose.model<ISubscription>("Subscription", SubscriptionSchema);
